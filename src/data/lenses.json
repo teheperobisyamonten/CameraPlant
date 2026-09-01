@@ -1,0 +1,108 @@
+[
+  {
+    "id": "sony_fe_24_70_gm2",
+    "manufacturer": "Sony",
+    "name": "FE 24-70mm F2.8 GM II",
+    "mount": "Sony E",
+    "type": "zoom",
+    "focalMinMm": 24,
+    "focalMaxMm": 70,
+    "maxAperture": 2.8,
+    "sensorCoverage": "Full Frame"
+  },
+  {
+    "id": "sony_fe_70_200_gm2",
+    "manufacturer": "Sony",
+    "name": "FE 70-200mm F2.8 GM OSS II",
+    "mount": "Sony E",
+    "type": "zoom",
+    "focalMinMm": 70,
+    "focalMaxMm": 200,
+    "maxAperture": 2.8,
+    "sensorCoverage": "Full Frame"
+  },
+  {
+    "id": "sony_fe_16_35_gm2",
+    "manufacturer": "Sony",
+    "name": "FE 16-35mm F2.8 GM II",
+    "mount": "Sony E",
+    "type": "zoom",
+    "focalMinMm": 16,
+    "focalMaxMm": 35,
+    "maxAperture": 2.8,
+    "sensorCoverage": "Full Frame"
+  },
+  {
+    "id": "sony_fe_50_f12_gm",
+    "manufacturer": "Sony",
+    "name": "FE 50mm F1.2 GM",
+    "mount": "Sony E",
+    "type": "prime",
+    "focalLengthMm": 50,
+    "maxAperture": 1.2,
+    "sensorCoverage": "Full Frame"
+  },
+  {
+    "id": "canon_rf_24_70_l",
+    "manufacturer": "Canon",
+    "name": "RF 24-70mm F2.8L IS USM",
+    "mount": "Canon RF",
+    "type": "zoom",
+    "focalMinMm": 24,
+    "focalMaxMm": 70,
+    "maxAperture": 2.8,
+    "sensorCoverage": "Full Frame"
+  },
+  {
+    "id": "canon_rf_50_f12_l",
+    "manufacturer": "Canon",
+    "name": "RF 50mm F1.2L USM",
+    "mount": "Canon RF",
+    "type": "prime",
+    "focalLengthMm": 50,
+    "maxAperture": 1.2,
+    "sensorCoverage": "Full Frame"
+  },
+  {
+    "id": "canon_ef_24_70_l2",
+    "manufacturer": "Canon",
+    "name": "EF 24-70mm F2.8L II USM",
+    "mount": "Canon EF",
+    "type": "zoom",
+    "focalMinMm": 24,
+    "focalMaxMm": 70,
+    "maxAperture": 2.8,
+    "sensorCoverage": "Full Frame"
+  },
+  {
+    "id": "canon_ef_50_f18_stm",
+    "manufacturer": "Canon",
+    "name": "EF 50mm F1.8 STM",
+    "mount": "Canon EF",
+    "type": "prime",
+    "focalLengthMm": 50,
+    "maxAperture": 1.8,
+    "sensorCoverage": "Full Frame"
+  },
+  {
+    "id": "panasonic_g_12_35_2",
+    "manufacturer": "Panasonic",
+    "name": "LUMIX G X VARIO 12-35mm F2.8 II ASPH.",
+    "mount": "Micro Four Thirds",
+    "type": "zoom",
+    "focalMinMm": 12,
+    "focalMaxMm": 35,
+    "maxAperture": 2.8,
+    "sensorCoverage": "Micro Four Thirds"
+  },
+  {
+    "id": "panasonic_leica_25_f14_2",
+    "manufacturer": "Panasonic",
+    "name": "LEICA DG SUMMILUX 25mm F1.4 II ASPH.",
+    "mount": "Micro Four Thirds",
+    "type": "prime",
+    "focalLengthMm": 25,
+    "maxAperture": 1.4,
+    "sensorCoverage": "Micro Four Thirds"
+  }
+]

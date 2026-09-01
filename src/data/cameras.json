@@ -1,0 +1,56 @@
+[
+  {
+    "id": "sony_fx3",
+    "manufacturer": "Sony",
+    "model": "FX3",
+    "mount": "Sony E",
+    "sensorType": "Full Frame",
+    "sensorWidthMm": 35.6,
+    "sensorHeightMm": 23.8
+  },
+  {
+    "id": "sony_a7s3",
+    "manufacturer": "Sony",
+    "model": "α7S III",
+    "mount": "Sony E",
+    "sensorType": "Full Frame",
+    "sensorWidthMm": 35.6,
+    "sensorHeightMm": 23.8
+  },
+  {
+    "id": "sony_fx6",
+    "manufacturer": "Sony",
+    "model": "FX6",
+    "mount": "Sony E",
+    "sensorType": "Full Frame",
+    "sensorWidthMm": 35.6,
+    "sensorHeightMm": 23.8
+  },
+  {
+    "id": "canon_eos_r5c",
+    "manufacturer": "Canon",
+    "model": "EOS R5 C",
+    "mount": "Canon RF",
+    "sensorType": "Full Frame",
+    "sensorWidthMm": 36.0,
+    "sensorHeightMm": 24.0
+  },
+  {
+    "id": "blackmagic_bmpcc6k",
+    "manufacturer": "Blackmagic Design",
+    "model": "Pocket Cinema Camera 6K",
+    "mount": "Canon EF",
+    "sensorType": "Super 35",
+    "sensorWidthMm": 23.10,
+    "sensorHeightMm": 12.99
+  },
+  {
+    "id": "panasonic_gh6",
+    "manufacturer": "Panasonic",
+    "model": "LUMIX GH6",
+    "mount": "Micro Four Thirds",
+    "sensorType": "Micro Four Thirds",
+    "sensorWidthMm": 17.3,
+    "sensorHeightMm": 13.0
+  }
+]

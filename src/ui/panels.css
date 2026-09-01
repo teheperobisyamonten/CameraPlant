@@ -106,6 +106,25 @@
   width: 140px;
 }
 
+.properties__focal-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.properties__focal-control input[type='range'] {
+  width: 80px;
+}
+
+.properties__focal-control input[type='number'] {
+  width: 52px;
+}
+
+.properties__focal-control span {
+  color: var(--cp-text-dim);
+  font-size: 11px;
+}
+
 .statusbar {
   background: var(--cp-bg-panel-alt);
   border-top: 1px solid var(--cp-border);
