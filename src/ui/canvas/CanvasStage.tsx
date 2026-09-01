@@ -2,11 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Stage, Layer } from 'react-konva'
 import type Konva from 'konva'
 import { useMapStore } from '../../state/mapStore'
+import { useScaleStore } from '../../state/scaleStore'
 import { MAX_SCALE, MIN_SCALE, useViewportStore } from '../../state/viewportStore'
 import { FloorMapLayer } from './FloorMapLayer'
+import { ScaleCalibrationLayer } from './ScaleCalibrationLayer'
+import { ScaleCalibrationPanel } from './ScaleCalibrationPanel'
 
 const ZOOM_STEP = 1.05
 const FIT_PADDING = 40
+/** Pointer movement (px) below which a mousedown/mouseup pair counts as a click, not a drag. */
+const CLICK_MOVE_THRESHOLD = 5
 
 export function CanvasStage() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -22,9 +27,14 @@ export function CanvasStage() {
   const resetToken = useViewportStore((s) => s.resetToken)
   const setTransform = useViewportStore((s) => s.setTransform)
 
+  const isCalibrating = useScaleStore((s) => s.isCalibrating)
+  const addCalibrationPoint = useScaleStore((s) => s.addPoint)
+  const cancelCalibration = useScaleStore((s) => s.cancelCalibration)
+
   const isSpaceDown = useRef(false)
   const isPanning = useRef(false)
   const lastPointer = useRef({ x: 0, y: 0 })
+  const clickStart = useRef<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     const el = containerRef.current
@@ -59,6 +69,7 @@ export function CanvasStage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') isSpaceDown.current = true
+      if (e.code === 'Escape' && isCalibrating) cancelCalibration()
     }
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') isSpaceDown.current = false
@@ -69,7 +80,7 @@ export function CanvasStage() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [])
+  }, [isCalibrating, cancelCalibration])
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault()
@@ -99,6 +110,10 @@ export function CanvasStage() {
       e.evt.preventDefault()
       isPanning.current = true
       lastPointer.current = { x: e.evt.clientX, y: e.evt.clientY }
+      return
+    }
+    if (e.evt.button === 0) {
+      clickStart.current = { x: e.evt.clientX, y: e.evt.clientY }
     }
   }
 
@@ -110,8 +125,37 @@ export function CanvasStage() {
     setTransform({ x: x + dx, y: y + dy })
   }
 
-  const stopPanning = () => {
+  const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (isPanning.current) {
+      isPanning.current = false
+      clickStart.current = null
+      return
+    }
+
+    const start = clickStart.current
+    clickStart.current = null
+    if (!start) return
+
+    const moved = Math.hypot(e.evt.clientX - start.x, e.evt.clientY - start.y)
+    if (moved > CLICK_MOVE_THRESHOLD) return
+
+    const stage = e.target.getStage()
+    const pointer = stage?.getPointerPosition()
+    if (!stage || !pointer) return
+
+    const imagePoint = {
+      x: (pointer.x - x) / scale,
+      y: (pointer.y - y) / scale,
+    }
+
+    if (isCalibrating) {
+      addCalibrationPoint(imagePoint)
+    }
+  }
+
+  const handleMouseLeave = () => {
     isPanning.current = false
+    clickStart.current = null
   }
 
   return (
@@ -133,6 +177,8 @@ export function CanvasStage() {
         </p>
       )}
 
+      <ScaleCalibrationPanel />
+
       {image && size.width > 0 && size.height > 0 && (
         <Stage
           width={size.width}
@@ -144,11 +190,12 @@ export function CanvasStage() {
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
-          onMouseUp={stopPanning}
-          onMouseLeave={stopPanning}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
         >
           <Layer>
             <FloorMapLayer image={image} />
+            <ScaleCalibrationLayer />
           </Layer>
         </Stage>
       )}
