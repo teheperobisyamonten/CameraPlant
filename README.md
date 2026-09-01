@@ -60,11 +60,20 @@ src/
 - Scale Calibration（2点指定 + 実距離入力による px/m 換算、異常値バリデーション）
 - Camera Object の配置・選択・移動・回転・削除、実機 Camera / Lens データベースからの選択
   （Mount 互換性によるレンズ絞り込み、Zoomレンズの焦点距離スライダー）
+- Camera Database（Camera DBメニュー）: 実機データベースに加えて、ユーザーが独自の
+  Camera（Manufacturer / Model / Mount / Sensor Size）を追加・削除できる。追加したカメラは
+  IndexedDBに永続化され、通常のCamera選択欄にもそのまま表示される
 - FOV（水平/垂直画角）の自動計算と Canvas 上への表示（回転・レンズ・焦点距離の変更に追従）
+- 被写界深度（Depth of Field）: Aperture（F値）と Focus Distance を設定すると、Near/Far/
+  Hyperfocalを自動計算。Scale設定済みの場合はFOV扇形内に合焦範囲を緑色のArcで表示
 - Subject（Person / Object）の配置・選択・移動・回転・Rename・削除
+- Personal Space: Person Subjectの周囲に可変半径（既定0.6m、0〜5mで調整可）の
+  パーソナルスペース円を表示
 - Camera ↔ Subject 間の実距離表示（Scale 未設定時は "Scale not configured"）
+- Layers パネル: Camera / Subject / Drawing の一覧表示、チェックボックスによる
+  複数選択と一括削除（Delete Selected）
 - Undo / Redo（Ctrl+Z / Ctrl+Shift+Z、Add・Move・Rotate・Delete・Property変更・Drawingが対象）
-- Sequence（1〜10）の切替・複製
+- Sequence（1〜10）の切替・複製・Clear（現在のSequenceの中身を一括クリア、Undo可能）
 - Drawing Tools（Pen / Line / Arrow / Rectangle / Circle / Text / Eraser / Measure、色・線幅変更）
 - IndexedDB へのローカル保存と Autosave（Saved / Save failed 表示）、リロード後の Project 復元
 - PNG / JPEG Export（Clean / Technical モード、解像度選択、JPEG品質設定）
@@ -74,5 +83,7 @@ src/
 - v0.1 は単一 Project の常時オートセーブ運用（複数 Project の一覧・切替 UI は非対応）
 - Drawing オブジェクトの作成後のドラッグ移動・リサイズは非対応（作成・選択・削除のみ）
 - Grid 表示・Snap to Grid は未実装
-- 3D Preview、実写Preview、被写界深度シミュレーション、AI自動配置、Cloud、Login、
-  リアルタイム共同編集、動画書き出し、本格的なCAD/BIM機能は v0.1 の対象外
+- 被写界深度は標準的な近似式（CoC = センサー対角線 / 1500）による簡易計算であり、
+  実際のレンズ固有の収差特性までは再現しない
+- 3D Preview、実写Preview、AI自動配置、Cloud、Login、リアルタイム共同編集、
+  動画書き出し、本格的なCAD/BIM機能は対象外
