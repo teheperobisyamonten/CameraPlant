@@ -1,6 +1,7 @@
 import { useCameraStore } from '../state/cameraStore'
 import { useHistoryStore } from '../state/historyStore'
 import { useMapStore } from '../state/mapStore'
+import { useProjectStore } from '../state/projectStore'
 import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { SEQUENCE_COUNT, useSequenceStore } from '../state/sequenceStore'
@@ -11,6 +12,8 @@ const PLACEMENT_STAGGER_PX = 24
 const PLACEMENT_STAGGER_COUNT = 6
 
 export function LeftSidebar() {
+  const projectName = useProjectStore((s) => s.name)
+  const setProjectName = useProjectStore((s) => s.setName)
   const image = useMapStore((s) => s.image)
   const pixelsPerMeter = useScaleStore((s) => s.pixelsPerMeter)
   const isCalibrating = useScaleStore((s) => s.isCalibrating)
@@ -47,9 +50,12 @@ export function LeftSidebar() {
       <div className="sidebar__section">
         <p className="sidebar__section-title">Project</p>
         <div className="sidebar__list">
-          <button className="sidebar__item" type="button">
-            Untitled Project
-          </button>
+          <input
+            className="sidebar__project-name"
+            type="text"
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+          />
         </div>
       </div>
 

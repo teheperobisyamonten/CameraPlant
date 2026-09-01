@@ -80,6 +80,10 @@
   width: 100%;
 }
 
+.sidebar__project-name {
+  width: 100%;
+}
+
 .sequence__grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -158,6 +162,10 @@
 .properties__focal-control span {
   color: var(--cp-text-dim);
   font-size: 11px;
+}
+
+.statusbar__error {
+  color: var(--cp-danger);
 }
 
 .statusbar {
