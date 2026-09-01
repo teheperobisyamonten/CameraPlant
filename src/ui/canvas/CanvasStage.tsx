@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Stage, Layer, Transformer } from 'react-konva'
 import type Konva from 'konva'
+import { resolveCameraFov } from '../../data/resolveFov'
+import { metersToPixels } from '../../geometry/scale'
 import { useCameraStore } from '../../state/cameraStore'
 import { useMapStore } from '../../state/mapStore'
 import { useScaleStore } from '../../state/scaleStore'
@@ -15,6 +17,9 @@ const ZOOM_STEP = 1.05
 const FIT_PADDING = 40
 /** Pointer movement (px) below which a mousedown/mouseup pair counts as a click, not a drag. */
 const CLICK_MOVE_THRESHOLD = 5
+/** How far the FOV wedge is drawn: a real-world preview distance once Scale is set, else a fixed fallback. */
+const FOV_PREVIEW_METERS = 5
+const FOV_PREVIEW_FALLBACK_PX = 220
 
 function isEditableElement(el: Element | null): boolean {
   if (!el) return false
@@ -39,10 +44,15 @@ export function CanvasStage() {
   const isCalibrating = useScaleStore((s) => s.isCalibrating)
   const addCalibrationPoint = useScaleStore((s) => s.addPoint)
   const cancelCalibration = useScaleStore((s) => s.cancelCalibration)
+  const pixelsPerMeter = useScaleStore((s) => s.pixelsPerMeter)
 
   const cameras = useCameraStore((s) => s.cameras)
   const updateCamera = useCameraStore((s) => s.updateCamera)
   const removeCamera = useCameraStore((s) => s.removeCamera)
+
+  const fovRangePx = pixelsPerMeter
+    ? metersToPixels(FOV_PREVIEW_METERS, pixelsPerMeter)
+    : FOV_PREVIEW_FALLBACK_PX
 
   const selected = useSelectionStore((s) => s.selected)
   const select = useSelectionStore((s) => s.select)
@@ -245,6 +255,8 @@ export function CanvasStage() {
                 key={camera.id}
                 camera={camera}
                 isSelected={selected?.kind === 'camera' && selected.id === camera.id}
+                fov={resolveCameraFov(camera)}
+                fovRangePx={fovRangePx}
                 onSelect={() => select({ kind: 'camera', id: camera.id })}
                 onDragMove={(nx, ny) => updateCamera(camera.id, { x: nx, y: ny })}
                 onRegister={(node) => {

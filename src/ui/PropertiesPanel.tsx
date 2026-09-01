@@ -1,6 +1,7 @@
 import { clampFocalLength, getCompatibleLenses } from '../data/compatibility'
 import CAMERAS from '../data/cameras.json'
 import LENSES from '../data/lenses.json'
+import { resolveCameraFov } from '../data/resolveFov'
 import { useCameraStore } from '../state/cameraStore'
 import { useSelectionStore } from '../state/selectionStore'
 import type { CameraDefinition } from '../types/cameraDefinition'
@@ -17,6 +18,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
 
   const cameraDefinition = CAMERA_DEFINITIONS.find((c) => c.id === camera.cameraDefinitionId)
   const lensDefinition = LENS_DEFINITIONS.find((l) => l.id === camera.lensDefinitionId)
+  const fov = resolveCameraFov(camera)
   const compatibleLenses = cameraDefinition
     ? getCompatibleLenses(cameraDefinition, LENS_DEFINITIONS)
     : []
@@ -140,6 +142,16 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
             if (Number.isFinite(value)) updateCamera(camera.id, { rotationDeg: value })
           }}
         />
+      </div>
+
+      <div className="properties__row">
+        <label>HFOV</label>
+        <span>{fov ? `${fov.horizontalDeg.toFixed(1)}°` : 'Not set'}</span>
+      </div>
+
+      <div className="properties__row">
+        <label>VFOV</label>
+        <span>{fov ? `${fov.verticalDeg.toFixed(1)}°` : 'Not set'}</span>
       </div>
     </>
   )

@@ -1,17 +1,28 @@
 import { useEffect, useRef } from 'react'
-import { Circle, Group, Rect, Text } from 'react-konva'
+import { Circle, Group, Rect, Text, Wedge } from 'react-konva'
 import type Konva from 'konva'
+import type { FovResult } from '../../geometry/fov'
 import type { CameraInstance } from '../../types/camera'
 
 interface CameraNodeProps {
   camera: CameraInstance
   isSelected: boolean
+  fov: FovResult | null
+  fovRangePx: number
   onSelect: () => void
   onDragMove: (x: number, y: number) => void
   onRegister: (node: Konva.Group | null) => void
 }
 
-export function CameraNode({ camera, isSelected, onSelect, onDragMove, onRegister }: CameraNodeProps) {
+export function CameraNode({
+  camera,
+  isSelected,
+  fov,
+  fovRangePx,
+  onSelect,
+  onDragMove,
+  onRegister,
+}: CameraNodeProps) {
   const groupRef = useRef<Konva.Group>(null)
 
   useEffect(() => {
@@ -22,6 +33,19 @@ export function CameraNode({ camera, isSelected, onSelect, onDragMove, onRegiste
 
   return (
     <>
+      {fov && (
+        <Wedge
+          x={camera.x}
+          y={camera.y}
+          radius={fovRangePx}
+          angle={fov.horizontalDeg}
+          rotation={camera.rotationDeg - fov.horizontalDeg / 2}
+          fill="rgba(79, 195, 247, 0.18)"
+          stroke="rgba(79, 195, 247, 0.55)"
+          strokeWidth={1}
+          listening={false}
+        />
+      )}
       <Group
         ref={groupRef}
         x={camera.x}
