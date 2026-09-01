@@ -1,5 +1,6 @@
 import { saveProject } from './projectPersistence'
 import { useCameraStore } from '../state/cameraStore'
+import { useDrawingStore } from '../state/drawingStore'
 import { useMapStore } from '../state/mapStore'
 import { useProjectStore } from '../state/projectStore'
 import { useScaleStore } from '../state/scaleStore'
@@ -39,6 +40,7 @@ export function initAutosave(): void {
 
   useCameraStore.subscribe(scheduleSave)
   useSubjectStore.subscribe(scheduleSave)
+  useDrawingStore.subscribe(scheduleSave)
   useMapStore.subscribe(scheduleSave)
   useScaleStore.subscribe(scheduleSave)
   useSequenceStore.subscribe(scheduleSave)

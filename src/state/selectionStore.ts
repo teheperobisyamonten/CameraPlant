@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type SelectableKind = 'camera' | 'subject'
+export type SelectableKind = 'camera' | 'subject' | 'drawing'
 
 export interface Selection {
   kind: SelectableKind
@@ -14,8 +14,8 @@ interface SelectionState {
 
 /**
  * Single, unified selection state for every canvas object type (Camera,
- * Subject, and later Drawing/Measurement). Components must not keep their
- * own local "selected" state — see Camera Plan spec Section 26.
+ * Subject, Drawing). Components must not keep their own local "selected"
+ * state — see Camera Plan spec Section 26.
  */
 export const useSelectionStore = create<SelectionState>((set) => ({
   selected: null,

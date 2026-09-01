@@ -1,11 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { CameraInstance } from '../types/camera'
-import type { SubjectInstance } from '../types/subject'
-
-export interface SceneSnapshotDTO {
-  cameras: CameraInstance[]
-  subjects: SubjectInstance[]
-}
+import type { SceneSnapshot } from '../state/snapshot'
 
 /** v0.1 has a single working project, always stored under CURRENT_PROJECT_ID. */
 export interface ProjectRecord {
@@ -15,7 +9,7 @@ export interface ProjectRecord {
   mapWidth: number | null
   mapHeight: number | null
   pixelsPerMeter: number | null
-  sequences: SceneSnapshotDTO[]
+  sequences: SceneSnapshot[]
   activeSequenceIndex: number
   updatedAt: number
 }

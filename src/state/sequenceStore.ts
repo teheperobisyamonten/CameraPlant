@@ -6,7 +6,7 @@ import { applySceneSnapshot, captureSceneSnapshot, type SceneSnapshot } from './
 export const SEQUENCE_COUNT = 10
 
 function emptySnapshot(): SceneSnapshot {
-  return { cameras: [], subjects: [] }
+  return { cameras: [], subjects: [], drawings: [] }
 }
 
 interface SequenceState {
@@ -45,6 +45,7 @@ export const useSequenceStore = create<SequenceState>((set, get) => ({
     const duplicated: SceneSnapshot = {
       cameras: current.cameras.map((camera) => ({ ...camera })),
       subjects: current.subjects.map((subject) => ({ ...subject })),
+      drawings: current.drawings.map((drawing) => ({ ...drawing })),
     }
 
     const updated = [...sequences]

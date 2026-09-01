@@ -4,6 +4,7 @@ import LENSES from '../data/lenses.json'
 import { resolveCameraFov } from '../data/resolveFov'
 import { distanceMeters } from '../geometry/distance'
 import { useCameraStore } from '../state/cameraStore'
+import { useDrawingStore } from '../state/drawingStore'
 import { useHistoryStore } from '../state/historyStore'
 import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
@@ -265,6 +266,41 @@ function SubjectProperties({ subjectId }: { subjectId: string }) {
   )
 }
 
+function DrawingProperties({ drawingId }: { drawingId: string }) {
+  const drawing = useDrawingStore((s) => s.drawings.find((d) => d.id === drawingId))
+  const removeDrawing = useDrawingStore((s) => s.removeDrawing)
+  const select = useSelectionStore((s) => s.select)
+
+  if (!drawing) return null
+
+  return (
+    <>
+      <p className="properties__title">Drawing</p>
+
+      <div className="properties__row">
+        <label>Type</label>
+        <span>{drawing.type}</span>
+      </div>
+
+      <div className="properties__row">
+        <label>Color</label>
+        <span>{drawing.color}</span>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          useHistoryStore.getState().commit()
+          removeDrawing(drawing.id)
+          select(null)
+        }}
+      >
+        Delete
+      </button>
+    </>
+  )
+}
+
 export function PropertiesPanel() {
   const selected = useSelectionStore((s) => s.selected)
 
@@ -272,6 +308,7 @@ export function PropertiesPanel() {
     <div className="panel properties">
       {selected?.kind === 'camera' && <CameraProperties cameraId={selected.id} />}
       {selected?.kind === 'subject' && <SubjectProperties subjectId={selected.id} />}
+      {selected?.kind === 'drawing' && <DrawingProperties drawingId={selected.id} />}
       {!selected && (
         <>
           <p className="properties__title">Properties</p>

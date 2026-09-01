@@ -6,6 +6,18 @@ import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { SEQUENCE_COUNT, useSequenceStore } from '../state/sequenceStore'
 import { useSubjectStore } from '../state/subjectStore'
+import { useToolStore, type ToolMode } from '../state/toolStore'
+
+const TOOL_ITEMS: { mode: ToolMode; label: string }[] = [
+  { mode: 'pen', label: 'Pen' },
+  { mode: 'line', label: 'Line' },
+  { mode: 'arrow', label: 'Arrow' },
+  { mode: 'rectangle', label: 'Rectangle' },
+  { mode: 'circle', label: 'Circle' },
+  { mode: 'text', label: 'Text' },
+  { mode: 'eraser', label: 'Eraser' },
+  { mode: 'measure', label: 'Measure' },
+]
 
 /** Spread newly placed cameras out a little so they don't stack exactly on top of each other. */
 const PLACEMENT_STAGGER_PX = 24
@@ -28,6 +40,17 @@ export function LeftSidebar() {
   const activeSequenceIndex = useSequenceStore((s) => s.activeIndex)
   const switchSequence = useSequenceStore((s) => s.switchTo)
   const duplicateSequence = useSequenceStore((s) => s.duplicateCurrentToNext)
+
+  const activeTool = useToolStore((s) => s.activeTool)
+  const setActiveTool = useToolStore((s) => s.setActiveTool)
+  const toolColor = useToolStore((s) => s.color)
+  const setToolColor = useToolStore((s) => s.setColor)
+  const toolStrokeWidth = useToolStore((s) => s.strokeWidth)
+  const setToolStrokeWidth = useToolStore((s) => s.setStrokeWidth)
+
+  const handleToolClick = (mode: ToolMode) => {
+    setActiveTool(activeTool === mode ? 'select' : mode)
+  }
 
   const handleAddCamera = () => {
     if (!image) return
@@ -127,19 +150,40 @@ export function LeftSidebar() {
 
       <div className="sidebar__section">
         <p className="sidebar__section-title">Tools</p>
-        <div className="sidebar__list">
-          <button className="sidebar__item" type="button">
-            Pen
-          </button>
-          <button className="sidebar__item" type="button">
-            Arrow
-          </button>
-          <button className="sidebar__item" type="button">
-            Text
-          </button>
-          <button className="sidebar__item" type="button">
-            Measure
-          </button>
+        <div className="tools__grid">
+          {TOOL_ITEMS.map(({ mode, label }) => (
+            <button
+              key={mode}
+              type="button"
+              className="sidebar__item tools__item"
+              aria-pressed={activeTool === mode}
+              disabled={!image}
+              onClick={() => handleToolClick(mode)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="tools__style-row">
+          <label htmlFor="tool-color">Color</label>
+          <input
+            id="tool-color"
+            type="color"
+            value={toolColor}
+            onChange={(e) => setToolColor(e.target.value)}
+          />
+          <label htmlFor="tool-stroke-width">Width</label>
+          <input
+            id="tool-stroke-width"
+            type="number"
+            min={1}
+            max={20}
+            value={toolStrokeWidth}
+            onChange={(e) => {
+              const value = Number(e.target.value)
+              if (Number.isFinite(value) && value > 0) setToolStrokeWidth(value)
+            }}
+          />
         </div>
       </div>
     </div>

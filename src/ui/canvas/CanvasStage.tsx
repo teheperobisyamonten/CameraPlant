@@ -2,19 +2,26 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Stage, Layer, Transformer } from 'react-konva'
 import type Konva from 'konva'
 import { resolveCameraFov } from '../../data/resolveFov'
+import { hitTestDrawing } from '../../geometry/drawing'
 import { metersToPixels } from '../../geometry/scale'
 import { useCameraStore } from '../../state/cameraStore'
+import { useDrawingStore } from '../../state/drawingStore'
 import { useHistoryStore } from '../../state/historyStore'
 import { useMapStore } from '../../state/mapStore'
 import { useScaleStore } from '../../state/scaleStore'
 import { useSelectionStore } from '../../state/selectionStore'
 import { useSubjectStore } from '../../state/subjectStore'
+import { useToolStore } from '../../state/toolStore'
 import { MAX_SCALE, MIN_SCALE, useViewportStore } from '../../state/viewportStore'
+import type { DrawingObject } from '../../types/drawing'
+import { buildDrawingFromDrag } from './buildDrawing'
 import { CameraNode } from './CameraNode'
+import { DrawingLayer } from './DrawingLayer'
 import { FloorMapLayer } from './FloorMapLayer'
 import { ScaleCalibrationLayer } from './ScaleCalibrationLayer'
 import { ScaleCalibrationPanel } from './ScaleCalibrationPanel'
 import { SubjectNode } from './SubjectNode'
+import { TextToolPanel } from './TextToolPanel'
 
 const ZOOM_STEP = 1.05
 const FIT_PADDING = 40
@@ -23,6 +30,8 @@ const CLICK_MOVE_THRESHOLD = 5
 /** How far the FOV wedge is drawn: a real-world preview distance once Scale is set, else a fixed fallback. */
 const FOV_PREVIEW_METERS = 5
 const FOV_PREVIEW_FALLBACK_PX = 220
+const ERASE_TOLERANCE_PX = 8
+const DEFAULT_TEXT_FONT_SIZE = 16
 
 function isEditableElement(el: Element | null): boolean {
   if (!el) return false
@@ -57,6 +66,15 @@ export function CanvasStage() {
   const updateSubject = useSubjectStore((s) => s.updateSubject)
   const removeSubject = useSubjectStore((s) => s.removeSubject)
 
+  const drawings = useDrawingStore((s) => s.drawings)
+  const addDrawing = useDrawingStore((s) => s.addDrawing)
+  const removeDrawing = useDrawingStore((s) => s.removeDrawing)
+
+  const activeTool = useToolStore((s) => s.activeTool)
+  const setActiveTool = useToolStore((s) => s.setActiveTool)
+  const toolColor = useToolStore((s) => s.color)
+  const toolStrokeWidth = useToolStore((s) => s.strokeWidth)
+
   const fovRangePx = pixelsPerMeter
     ? metersToPixels(FOV_PREVIEW_METERS, pixelsPerMeter)
     : FOV_PREVIEW_FALLBACK_PX
@@ -68,6 +86,13 @@ export function CanvasStage() {
   const isPanning = useRef(false)
   const lastPointer = useRef({ x: 0, y: 0 })
   const clickStart = useRef<{ x: number; y: number } | null>(null)
+
+  const isDrawingGesture = useRef(false)
+  const isErasing = useRef(false)
+  const drawStart = useRef<{ x: number; y: number } | null>(null)
+  const penPoints = useRef<number[]>([])
+  const [previewDrawing, setPreviewDrawing] = useState<DrawingObject | null>(null)
+  const [textPromptPoint, setTextPromptPoint] = useState<{ x: number; y: number } | null>(null)
 
   const shapeRefs = useRef(new Map<string, Konva.Group>())
   const transformerRef = useRef<Konva.Transformer>(null)
@@ -113,7 +138,11 @@ export function CanvasStage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') isSpaceDown.current = true
-      if (e.code === 'Escape' && isCalibrating) cancelCalibration()
+      if (e.code === 'Escape') {
+        if (isCalibrating) cancelCalibration()
+        if (textPromptPoint) setTextPromptPoint(null)
+        setActiveTool('select')
+      }
 
       const isDeleteKey =
         e.code === 'Delete' || e.code === 'Backspace' || e.key === 'Delete' || e.key === 'Backspace'
@@ -123,8 +152,10 @@ export function CanvasStage() {
         useHistoryStore.getState().commit()
         if (selected.kind === 'camera') {
           removeCamera(selected.id)
-        } else {
+        } else if (selected.kind === 'subject') {
           removeSubject(selected.id)
+        } else {
+          removeDrawing(selected.id)
         }
         select(null)
         return
@@ -153,7 +184,17 @@ export function CanvasStage() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [isCalibrating, cancelCalibration, selected, removeCamera, removeSubject, select])
+  }, [
+    isCalibrating,
+    cancelCalibration,
+    selected,
+    removeCamera,
+    removeSubject,
+    removeDrawing,
+    select,
+    textPromptPoint,
+    setActiveTool,
+  ])
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault()
@@ -177,6 +218,21 @@ export function CanvasStage() {
     })
   }
 
+  const getImagePoint = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    const stage = e.target.getStage()
+    const pointer = stage?.getPointerPosition()
+    if (!stage || !pointer) return null
+    return { x: (pointer.x - x) / scale, y: (pointer.y - y) / scale }
+  }
+
+  const eraseAt = (point: { x: number; y: number }) => {
+    const hit = drawings.find((d) => hitTestDrawing(point, d, ERASE_TOLERANCE_PX))
+    if (hit) {
+      useHistoryStore.getState().commit()
+      removeDrawing(hit.id)
+    }
+  }
+
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const isMiddleButton = e.evt.button === 1
     if (isMiddleButton || isSpaceDown.current) {
@@ -185,23 +241,123 @@ export function CanvasStage() {
       lastPointer.current = { x: e.evt.clientX, y: e.evt.clientY }
       return
     }
-    if (e.evt.button === 0) {
-      clickStart.current = { x: e.evt.clientX, y: e.evt.clientY }
+    if (e.evt.button !== 0) return
+
+    if (activeTool !== 'select' && !isCalibrating) {
+      const point = getImagePoint(e)
+      if (!point) return
+
+      if (activeTool === 'text') {
+        setTextPromptPoint(point)
+        return
+      }
+      if (activeTool === 'eraser') {
+        isErasing.current = true
+        eraseAt(point)
+        return
+      }
+      if (activeTool === 'pen') {
+        isDrawingGesture.current = true
+        penPoints.current = [point.x, point.y]
+        setPreviewDrawing({
+          id: 'preview',
+          type: 'pen',
+          points: [...penPoints.current],
+          color: toolColor,
+          strokeWidth: toolStrokeWidth,
+        })
+        return
+      }
+      // line / arrow / rectangle / circle / measure
+      isDrawingGesture.current = true
+      drawStart.current = point
+      return
     }
+
+    clickStart.current = { x: e.evt.clientX, y: e.evt.clientY }
   }
 
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (!isPanning.current) return
-    const dx = e.evt.clientX - lastPointer.current.x
-    const dy = e.evt.clientY - lastPointer.current.y
-    lastPointer.current = { x: e.evt.clientX, y: e.evt.clientY }
-    setTransform({ x: x + dx, y: y + dy })
+    if (isPanning.current) {
+      const dx = e.evt.clientX - lastPointer.current.x
+      const dy = e.evt.clientY - lastPointer.current.y
+      lastPointer.current = { x: e.evt.clientX, y: e.evt.clientY }
+      setTransform({ x: x + dx, y: y + dy })
+      return
+    }
+
+    if (isErasing.current) {
+      const point = getImagePoint(e)
+      if (point) eraseAt(point)
+      return
+    }
+
+    if (isDrawingGesture.current) {
+      const point = getImagePoint(e)
+      if (!point) return
+      if (activeTool === 'pen') {
+        penPoints.current.push(point.x, point.y)
+        setPreviewDrawing({
+          id: 'preview',
+          type: 'pen',
+          points: [...penPoints.current],
+          color: toolColor,
+          strokeWidth: toolStrokeWidth,
+        })
+      } else if (drawStart.current) {
+        setPreviewDrawing(
+          buildDrawingFromDrag(activeTool, drawStart.current, point, toolColor, toolStrokeWidth),
+        )
+      }
+    }
   }
 
   const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (isPanning.current) {
       isPanning.current = false
       clickStart.current = null
+      return
+    }
+
+    if (isErasing.current) {
+      isErasing.current = false
+      return
+    }
+
+    if (isDrawingGesture.current) {
+      isDrawingGesture.current = false
+      let finalDrawing: DrawingObject | null = null
+
+      if (activeTool === 'pen') {
+        if (penPoints.current.length >= 4) {
+          finalDrawing = {
+            id: crypto.randomUUID(),
+            type: 'pen',
+            points: [...penPoints.current],
+            color: toolColor,
+            strokeWidth: toolStrokeWidth,
+          }
+        }
+        penPoints.current = []
+      } else if (drawStart.current) {
+        const point = getImagePoint(e)
+        if (point) {
+          finalDrawing = buildDrawingFromDrag(
+            activeTool,
+            drawStart.current,
+            point,
+            toolColor,
+            toolStrokeWidth,
+          )
+        }
+        drawStart.current = null
+      }
+
+      setPreviewDrawing(null)
+      if (finalDrawing) {
+        useHistoryStore.getState().commit()
+        addDrawing(finalDrawing)
+      }
       return
     }
 
@@ -237,6 +393,22 @@ export function CanvasStage() {
     clickStart.current = null
   }
 
+  const handleTextConfirm = (text: string) => {
+    if (!textPromptPoint) return
+    useHistoryStore.getState().commit()
+    addDrawing({
+      id: crypto.randomUUID(),
+      type: 'text',
+      x: textPromptPoint.x,
+      y: textPromptPoint.y,
+      text,
+      fontSize: DEFAULT_TEXT_FONT_SIZE,
+      color: toolColor,
+      strokeWidth: toolStrokeWidth,
+    })
+    setTextPromptPoint(null)
+  }
+
   return (
     <div className="canvas-area" ref={containerRef}>
       {error && (
@@ -257,6 +429,9 @@ export function CanvasStage() {
       )}
 
       <ScaleCalibrationPanel />
+      {textPromptPoint && (
+        <TextToolPanel onConfirm={handleTextConfirm} onCancel={() => setTextPromptPoint(null)} />
+      )}
 
       {image && size.width > 0 && size.height > 0 && (
         <Stage
@@ -275,6 +450,15 @@ export function CanvasStage() {
           <Layer>
             <FloorMapLayer image={image} />
             <ScaleCalibrationLayer />
+            <DrawingLayer
+              drawings={drawings}
+              selectedId={selected?.kind === 'drawing' ? selected.id : null}
+              onSelect={(id) => select({ kind: 'drawing', id })}
+              interactive={activeTool === 'select'}
+            />
+            {previewDrawing && (
+              <DrawingLayer drawings={[previewDrawing]} interactive={false} />
+            )}
             {cameras.map((camera) => (
               <CameraNode
                 key={camera.id}
@@ -318,7 +502,7 @@ export function CanvasStage() {
                 if (!node || !selected) return
                 if (selected.kind === 'camera') {
                   updateCamera(selected.id, { rotationDeg: node.rotation() })
-                } else {
+                } else if (selected.kind === 'subject') {
                   updateSubject(selected.id, { rotationDeg: node.rotation() })
                 }
               }}
@@ -327,7 +511,7 @@ export function CanvasStage() {
                 if (!node || !selected) return
                 if (selected.kind === 'camera') {
                   updateCamera(selected.id, { rotationDeg: node.rotation() })
-                } else {
+                } else if (selected.kind === 'subject') {
                   updateSubject(selected.id, { rotationDeg: node.rotation() })
                 }
               }}

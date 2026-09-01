@@ -1,6 +1,7 @@
 import { suppressAutosave } from './autosave'
 import { CURRENT_PROJECT_ID, db, type ProjectRecord } from './db'
 import { useCameraStore } from '../state/cameraStore'
+import { useDrawingStore } from '../state/drawingStore'
 import { useMapStore } from '../state/mapStore'
 import { useProjectStore } from '../state/projectStore'
 import { useScaleStore } from '../state/scaleStore'
@@ -58,6 +59,7 @@ export async function loadProject(): Promise<boolean> {
     if (activeScene) {
       useCameraStore.setState({ cameras: activeScene.cameras })
       useSubjectStore.setState({ subjects: activeScene.subjects })
+      useDrawingStore.setState({ drawings: activeScene.drawings })
     }
   } finally {
     suppressAutosave(false)
