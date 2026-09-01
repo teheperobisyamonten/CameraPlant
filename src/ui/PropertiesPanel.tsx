@@ -4,6 +4,7 @@ import LENSES from '../data/lenses.json'
 import { resolveCameraFov } from '../data/resolveFov'
 import { distanceMeters } from '../geometry/distance'
 import { useCameraStore } from '../state/cameraStore'
+import { useHistoryStore } from '../state/historyStore'
 import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { useSubjectStore } from '../state/subjectStore'
@@ -59,6 +60,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
     const next = CAMERA_DEFINITIONS.find((c) => c.id === id) ?? null
     // Changing the camera model can invalidate the current lens (different mount),
     // so the lens selection is cleared and must be re-chosen from the compatible list.
+    useHistoryStore.getState().commit()
     updateCamera(camera.id, {
       cameraDefinitionId: next?.id ?? null,
       lensDefinitionId: null,
@@ -68,6 +70,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
 
   const handleLensChange = (id: string) => {
     const next = LENS_DEFINITIONS.find((l) => l.id === id) ?? null
+    useHistoryStore.getState().commit()
     updateCamera(camera.id, {
       lensDefinitionId: next?.id ?? null,
       focalLengthMm: next ? clampFocalLength(next, next.type === 'prime' ? next.focalLengthMm : next.focalMinMm) : null,
@@ -89,6 +92,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
           id="camera-name"
           type="text"
           value={camera.name}
+          onFocus={() => useHistoryStore.getState().commit()}
           onChange={(e) => updateCamera(camera.id, { name: e.target.value })}
         />
       </div>
@@ -136,6 +140,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
               max={lensDefinition.focalMaxMm}
               step={1}
               value={camera.focalLengthMm ?? lensDefinition.focalMinMm}
+              onFocus={() => useHistoryStore.getState().commit()}
               onChange={(e) => handleFocalLengthChange(Number(e.target.value))}
             />
             <input
@@ -143,6 +148,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
               min={lensDefinition.focalMinMm}
               max={lensDefinition.focalMaxMm}
               value={Math.round(camera.focalLengthMm ?? lensDefinition.focalMinMm)}
+              onFocus={() => useHistoryStore.getState().commit()}
               onChange={(e) => handleFocalLengthChange(Number(e.target.value))}
             />
             <span>mm</span>
@@ -169,6 +175,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
           type="number"
           step="1"
           value={Math.round(camera.rotationDeg)}
+          onFocus={() => useHistoryStore.getState().commit()}
           onChange={(e) => {
             const value = Number(e.target.value)
             if (Number.isFinite(value)) updateCamera(camera.id, { rotationDeg: value })
@@ -208,6 +215,7 @@ function SubjectProperties({ subjectId }: { subjectId: string }) {
           id="subject-name"
           type="text"
           value={subject.name}
+          onFocus={() => useHistoryStore.getState().commit()}
           onChange={(e) => updateSubject(subject.id, { name: e.target.value })}
         />
       </div>
@@ -217,7 +225,10 @@ function SubjectProperties({ subjectId }: { subjectId: string }) {
         <select
           id="subject-type"
           value={subject.type}
-          onChange={(e) => updateSubject(subject.id, { type: e.target.value as SubjectType })}
+          onChange={(e) => {
+            useHistoryStore.getState().commit()
+            updateSubject(subject.id, { type: e.target.value as SubjectType })
+          }}
         >
           <option value="person">Person</option>
           <option value="object">Object</option>
@@ -241,6 +252,7 @@ function SubjectProperties({ subjectId }: { subjectId: string }) {
           type="number"
           step="1"
           value={Math.round(subject.rotationDeg)}
+          onFocus={() => useHistoryStore.getState().commit()}
           onChange={(e) => {
             const value = Number(e.target.value)
             if (Number.isFinite(value)) updateSubject(subject.id, { rotationDeg: value })

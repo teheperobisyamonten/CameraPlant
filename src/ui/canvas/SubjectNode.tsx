@@ -7,11 +7,19 @@ interface SubjectNodeProps {
   subject: SubjectInstance
   isSelected: boolean
   onSelect: () => void
+  onDragStart: () => void
   onDragMove: (x: number, y: number) => void
   onRegister: (node: Konva.Group | null) => void
 }
 
-export function SubjectNode({ subject, isSelected, onSelect, onDragMove, onRegister }: SubjectNodeProps) {
+export function SubjectNode({
+  subject,
+  isSelected,
+  onSelect,
+  onDragStart,
+  onDragMove,
+  onRegister,
+}: SubjectNodeProps) {
   const groupRef = useRef<Konva.Group>(null)
 
   useEffect(() => {
@@ -33,6 +41,7 @@ export function SubjectNode({ subject, isSelected, onSelect, onDragMove, onRegis
         draggable
         onClick={onSelect}
         onTap={onSelect}
+        onDragStart={onDragStart}
         onDragMove={(e) => onDragMove(e.target.x(), e.target.y())}
         onDragEnd={(e) => onDragMove(e.target.x(), e.target.y())}
       >

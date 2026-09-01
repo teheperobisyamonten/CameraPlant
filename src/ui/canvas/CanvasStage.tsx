@@ -4,6 +4,7 @@ import type Konva from 'konva'
 import { resolveCameraFov } from '../../data/resolveFov'
 import { metersToPixels } from '../../geometry/scale'
 import { useCameraStore } from '../../state/cameraStore'
+import { useHistoryStore } from '../../state/historyStore'
 import { useMapStore } from '../../state/mapStore'
 import { useScaleStore } from '../../state/scaleStore'
 import { useSelectionStore } from '../../state/selectionStore'
@@ -119,12 +120,28 @@ export function CanvasStage() {
       if (isDeleteKey && selected) {
         if (isEditableElement(document.activeElement)) return
         e.preventDefault()
+        useHistoryStore.getState().commit()
         if (selected.kind === 'camera') {
           removeCamera(selected.id)
         } else {
           removeSubject(selected.id)
         }
         select(null)
+        return
+      }
+
+      if (isEditableElement(document.activeElement)) return
+
+      const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z'
+      const isRedo =
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y')
+      if (isUndo) {
+        e.preventDefault()
+        useHistoryStore.getState().undo()
+      } else if (isRedo) {
+        e.preventDefault()
+        useHistoryStore.getState().redo()
       }
     }
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -266,6 +283,7 @@ export function CanvasStage() {
                 fov={resolveCameraFov(camera)}
                 fovRangePx={fovRangePx}
                 onSelect={() => select({ kind: 'camera', id: camera.id })}
+                onDragStart={() => useHistoryStore.getState().commit()}
                 onDragMove={(nx, ny) => updateCamera(camera.id, { x: nx, y: ny })}
                 onRegister={(node) => {
                   if (node) shapeRefs.current.set(camera.id, node)
@@ -279,6 +297,7 @@ export function CanvasStage() {
                 subject={subject}
                 isSelected={selected?.kind === 'subject' && selected.id === subject.id}
                 onSelect={() => select({ kind: 'subject', id: subject.id })}
+                onDragStart={() => useHistoryStore.getState().commit()}
                 onDragMove={(nx, ny) => updateSubject(subject.id, { x: nx, y: ny })}
                 onRegister={(node) => {
                   if (node) shapeRefs.current.set(subject.id, node)
@@ -293,6 +312,7 @@ export function CanvasStage() {
               borderStroke="#4fc3f7"
               anchorStroke="#4fc3f7"
               anchorFill="#1e1e1e"
+              onTransformStart={() => useHistoryStore.getState().commit()}
               onTransform={() => {
                 const node = transformerRef.current?.nodes()[0]
                 if (!node || !selected) return

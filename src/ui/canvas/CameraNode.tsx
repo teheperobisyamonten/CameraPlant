@@ -10,6 +10,7 @@ interface CameraNodeProps {
   fov: FovResult | null
   fovRangePx: number
   onSelect: () => void
+  onDragStart: () => void
   onDragMove: (x: number, y: number) => void
   onRegister: (node: Konva.Group | null) => void
 }
@@ -20,6 +21,7 @@ export function CameraNode({
   fov,
   fovRangePx,
   onSelect,
+  onDragStart,
   onDragMove,
   onRegister,
 }: CameraNodeProps) {
@@ -54,6 +56,7 @@ export function CameraNode({
         draggable
         onClick={onSelect}
         onTap={onSelect}
+        onDragStart={onDragStart}
         onDragMove={(e) => onDragMove(e.target.x(), e.target.y())}
         onDragEnd={(e) => onDragMove(e.target.x(), e.target.y())}
       >

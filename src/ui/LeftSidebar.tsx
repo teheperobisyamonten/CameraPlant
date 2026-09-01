@@ -1,4 +1,5 @@
 import { useCameraStore } from '../state/cameraStore'
+import { useHistoryStore } from '../state/historyStore'
 import { useMapStore } from '../state/mapStore'
 import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
@@ -23,6 +24,7 @@ export function LeftSidebar() {
   const handleAddCamera = () => {
     if (!image) return
     const stagger = (cameras.length % PLACEMENT_STAGGER_COUNT) * PLACEMENT_STAGGER_PX
+    useHistoryStore.getState().commit()
     const id = addCamera({ x: image.width / 2 + stagger, y: image.height / 2 + stagger })
     select({ kind: 'camera', id })
   }
@@ -30,6 +32,7 @@ export function LeftSidebar() {
   const handleAddSubject = () => {
     if (!image) return
     const stagger = (subjects.length % PLACEMENT_STAGGER_COUNT) * PLACEMENT_STAGGER_PX
+    useHistoryStore.getState().commit()
     const id = addSubject({ x: image.width / 2 - stagger, y: image.height / 2 + stagger })
     select({ kind: 'subject', id })
   }

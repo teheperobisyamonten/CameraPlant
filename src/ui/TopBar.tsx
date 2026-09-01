@@ -1,4 +1,5 @@
 import { useRef, type ChangeEvent } from 'react'
+import { useHistoryStore } from '../state/historyStore'
 import { useMapStore } from '../state/mapStore'
 import { useViewportStore } from '../state/viewportStore'
 
@@ -9,6 +10,10 @@ export function TopBar() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const loadFromFile = useMapStore((s) => s.loadFromFile)
   const requestReset = useViewportStore((s) => s.requestReset)
+  const canUndo = useHistoryStore((s) => s.past.length > 0)
+  const canRedo = useHistoryStore((s) => s.future.length > 0)
+  const undo = useHistoryStore((s) => s.undo)
+  const redo = useHistoryStore((s) => s.redo)
 
   const handleMenuClick = (item: MenuItem) => {
     if (item === 'Map') {
@@ -39,6 +44,24 @@ export function TopBar() {
           </button>
         ))}
       </nav>
+      <div className="topbar__history">
+        <button
+          type="button"
+          title="Undo (Ctrl+Z)"
+          disabled={!canUndo}
+          onClick={() => undo()}
+        >
+          ↶
+        </button>
+        <button
+          type="button"
+          title="Redo (Ctrl+Shift+Z)"
+          disabled={!canRedo}
+          onClick={() => redo()}
+        >
+          ↷
+        </button>
+      </div>
       <input
         ref={fileInputRef}
         type="file"
