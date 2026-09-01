@@ -1,91 +1,150 @@
-# Camera Plant v0.1
+# Camera Plant
 
-平面図（Floor Map）上にカメラ・レンズ・被写体を配置し、実際のカメラとレンズのスペックから
-撮影画角（FOV）を可視化する 2D 撮影プランナー。MV撮影・スタジオ撮影・インタビュー・
-YouTube撮影・ロケハンなど、撮影前のカメラ配置検討を素早く行うためのブラウザアプリです。
+平面図（Floor Map）の上に **カメラ・レンズ・被写体** を配置し、実際のカメラ／レンズの
+スペックから **撮影画角（FOV）** と **被写界深度（DoF）** を自動計算・可視化する、
+ブラウザだけで動く 2D 撮影プランナーです。
 
-3D プレビューや実写プレビューは扱いません。撮影前に「カメラ配置と実際の画角を素早く
-確認できること」を最優先しています。
+MV撮影・スタジオ撮影・インタビュー・YouTube撮影・ライブ撮影・ロケハンなど、
+「本番前にカメラ配置と画角をサッと確認したい」という場面を主な用途としています。
 
-## Requirements
+インストール不要・アカウント登録不要・サーバー不要で、下記の公開URLをブラウザで
+開くだけですぐに使い始められます。
 
-- Node.js 18 以上（開発時は v24 で動作確認）
-- npm
+## 🔗 公開サイト（すぐ試せます）
 
-## Install
+**https://teheperobisyamonten.github.io/CameraPlant/**
 
-```bash
-npm install
+- ログイン・会員登録は一切不要です
+- 作成したプロジェクトのデータは、あなたが開いているブラウザの中（IndexedDB）だけに
+  保存されます。サーバーには何も送信されません。他の人がこのURLを開いても、
+  あなたのデータが見られたり、共有されたりすることはありません
+- ブラウザ・端末を変えると、そのブラウザ内のデータは引き継がれません
+  （同じブラウザ・同じ端末で開けば、リロードしても保存内容は復元されます）
+
+---
+
+## 使い方の基本的な流れ
+
+```
+サイトを開く
+  ↓
+Floor Map（平面図の画像 / PNG・JPEG）を読み込む
+  ↓
+実寸の2点を指定して距離を入力し、縮尺（Scale）を設定する
+  ↓
+「Camera」ボタンで平面図上にカメラを配置する
+  ↓
+Properties パネルで実機のカメラ機種・レンズを選ぶ
+  （Equipment Database で自分の手持ち機材を追加することも可能）
+  ↓
+焦点距離・絞り（F値）・フォーカス距離を設定する
+  → 画角（FOV）と被写界深度（合焦範囲）が自動で平面図上に表示される
+  ↓
+カメラをドラッグ／回転させて、狙いのアングルを探す
+  ↓
+「Subject」ボタンで被写体（人物 or 物）を配置する
+  → カメラとの実距離が自動表示される
+  ↓
+Sequence（1〜10）を切り替えながら、カット割りごとの配置を保存する
+  ↓
+矢印・テキストなどでメモを書き込む
+  ↓
+自動的にブラウザ内へ保存される（Autosave）
+  ↓
+PNG または JPEG として画像に書き出す
 ```
 
-## Run
+## 主な機能
+
+### 平面図・縮尺
+- Floor Map（PNG / JPEG）の読み込み、Zoom / Pan / Reset View
+- Scale Calibration：平面図上の2点をクリックして実距離（m）を入力するだけで、
+  ピクセル⇔メートルの換算を自動設定（0・負数・NaN・同一点などの入力ミスは拒否）
+
+### カメラ・レンズ
+- カメラの配置・選択・ドラッグ移動・回転・削除
+- 実機データベースからのカメラ／レンズ選択（マウントが一致するレンズのみ候補に表示）
+- ズームレンズはスライダー＋数値入力で焦点距離を調整（レンズの対応範囲内にクランプ）
+- **Equipment Database**（メニューの「Equipment DB」）：built-inの実機データに加えて、
+  自分の手持ちカメラ・レンズを自由に追加できる独自データベース機能
+  - カメラ: メーカー / 機種名 / マウント / センサーサイズ
+  - レンズ: メーカー / 名称 / マウント / ズーム or 単焦点 / 焦点距離 / 開放F値 / イメージサークル
+  - 追加した機材はブラウザに保存され、通常のカメラ／レンズ選択欄にそのまま登場する
+
+### 画角・被写界深度
+- 水平／垂直画角（HFOV / VFOV）をセンサーサイズと焦点距離から自動計算し、
+  平面図上に扇形で表示（カメラの回転・レンズ変更・焦点距離変更にリアルタイムで追従）
+- 被写界深度（Depth of Field）：絞り（F値）とフォーカス距離を設定すると、
+  ピントが合う範囲（Near〜Far）とハイパーフォーカル距離を自動計算し、
+  縮尺設定済みなら扇形の中に合焦範囲を緑色の帯として重ねて表示
+
+### 被写体
+- Person（人物）／ Object（物）の配置・選択・移動・回転・名前変更・削除
+- Personal Space：人物の周囲に「パーソナルスペース」の円を表示（半径0〜5mで調整可能）
+- カメラ⇔被写体の実距離を自動表示（縮尺未設定時は「Scale not configured」と表示）
+
+### 描画・レイヤー
+- Pen / Line / Arrow / Rectangle / Circle / Text / Eraser / Measure の描画ツール
+  （色・線の太さを変更可能）
+- Layers パネル：配置済みの全オブジェクト（カメラ・被写体・描画）を一覧表示し、
+  チェックボックスで複数選択して一括削除できる
+
+### シーケンス・保存・書き出し
+- Sequence（1〜10）を切り替えて、カットごとにカメラ・被写体の配置を個別に保持
+  （Duplicate で現在の配置を複製、Clear で中身を一括クリア）
+- Undo / Redo（Ctrl+Z / Ctrl+Shift+Z）— 追加・移動・回転・削除・プロパティ変更・
+  描画のすべてに対応（ドラッグ中やタイプ中に履歴が大量発生しないよう最適化済み）
+- ブラウザの IndexedDB へ自動保存（Autosave）、リロード後もプロジェクトを復元
+- PNG / JPEG での画像書き出し（UIを含まないクリーンな見た目、または機材情報付きの
+  Technicalモード、解像度・JPEG品質の選択に対応）
+
+---
+
+## 開発者向け情報
+
+### 技術スタック
+React 18 + TypeScript + Vite / Konva.js（react-konva、2D Canvas描画）/ Zustand（状態管理）
+/ Dexie（IndexedDBラッパー）/ Vitest（テスト）
+
+### セットアップ
 
 ```bash
-npm run dev
+npm install       # 依存関係のインストール
+npm run dev       # 開発サーバー起動（http://localhost:5173）
+npm run build     # 本番ビルド（dist/ に出力）
+npm test          # ユニットテスト実行（Geometry層・Data層の計算・互換性判定など）
 ```
 
-`http://localhost:5173` を開きます。
-
-## Build
-
-```bash
-npm run build
-```
-
-`dist/` に本番ビルドを出力します。
-
-## Test
-
-```bash
-npm test
-```
-
-Vitest によるユニットテスト（Geometry層・Data層の互換性判定など）を実行します。
-
-## Project Structure
+### ディレクトリ構成
 
 ```
 src/
   ui/            UI コンポーネント（TopBar / LeftSidebar / PropertiesPanel / StatusBar / Canvas）
   state/         Zustand ストア（Camera / Subject / Drawing / Sequence / Undo / Scale / Tool ...）
-  geometry/      座標変換・FOV・距離・回転計算などの純粋関数（px / meter / degree の変換はここに集約）
-  data/          Camera / Lens 実機データベース（cameras.json / lenses.json）と互換性判定
+  geometry/      座標変換・FOV・被写界深度・距離・回転計算などの純粋関数
+                 （px / meter / mm / degree の変換はすべてここに集約）
+  data/          Camera / Lens 実機データベース（cameras.json / lenses.json）、互換性判定、
+                 カスタム機材とのマージ処理
   persistence/   IndexedDB 保存・Autosave・PNG/JPEG Export
   types/         各ドメインオブジェクトの型定義
 ```
 
-## Implemented Features
+### デプロイについて
 
-- Floor Map（PNG / JPEG）読込、Zoom / Pan / Reset View
-- Scale Calibration（2点指定 + 実距離入力による px/m 換算、異常値バリデーション）
-- Camera Object の配置・選択・移動・回転・削除、実機 Camera / Lens データベースからの選択
-  （Mount 互換性によるレンズ絞り込み、Zoomレンズの焦点距離スライダー）
-- Equipment Database（Equipment DBメニュー）: 実機データベースに加えて、ユーザーが独自の
-  Camera（Manufacturer / Model / Mount / Sensor Size）とLens（Manufacturer / Name / Mount /
-  Zoom or Prime / Focal Range or Focal Length / Max Aperture / Sensor Coverage）を追加・削除
-  できる。追加した機材はIndexedDBに永続化され、通常のCamera/Lens選択欄にもそのまま表示・
-  Mount互換性フィルタの対象になる
-- FOV（水平/垂直画角）の自動計算と Canvas 上への表示（回転・レンズ・焦点距離の変更に追従）
-- 被写界深度（Depth of Field）: Aperture（F値）と Focus Distance を設定すると、Near/Far/
-  Hyperfocalを自動計算。Scale設定済みの場合はFOV扇形内に合焦範囲を緑色のArcで表示
-- Subject（Person / Object）の配置・選択・移動・回転・Rename・削除
-- Personal Space: Person Subjectの周囲に可変半径（既定0.6m、0〜5mで調整可）の
-  パーソナルスペース円を表示
-- Camera ↔ Subject 間の実距離表示（Scale 未設定時は "Scale not configured"）
-- Layers パネル: Camera / Subject / Drawing の一覧表示、チェックボックスによる
-  複数選択と一括削除（Delete Selected）
-- Undo / Redo（Ctrl+Z / Ctrl+Shift+Z、Add・Move・Rotate・Delete・Property変更・Drawingが対象）
-- Sequence（1〜10）の切替・複製・Clear（現在のSequenceの中身を一括クリア、Undo可能）
-- Drawing Tools（Pen / Line / Arrow / Rectangle / Circle / Text / Eraser / Measure、色・線幅変更）
-- IndexedDB へのローカル保存と Autosave（Saved / Save failed 表示）、リロード後の Project 復元
-- PNG / JPEG Export（Clean / Technical モード、解像度選択、JPEG品質設定）
+このリポジトリは非公開（Private）ですが、`gh-pages` ブランチの静的ビルド成果物のみを
+GitHub Pages で公開しています。コードを更新した場合の再公開手順：
 
-## Known Limitations
+```bash
+npm run build
+# dist/ の内容を gh-pages ブランチへコミット・push
+```
 
-- v0.1 は単一 Project の常時オートセーブ運用（複数 Project の一覧・切替 UI は非対応）
+## 既知の制約
+
+- 単一 Project の常時オートセーブ運用（複数 Project の一覧・切替 UI は非対応）
 - Drawing オブジェクトの作成後のドラッグ移動・リサイズは非対応（作成・選択・削除のみ）
 - Grid 表示・Snap to Grid は未実装
-- 被写界深度は標準的な近似式（CoC = センサー対角線 / 1500）による簡易計算であり、
+- 被写界深度は標準的な近似式（許容錯乱円 = センサー対角線 / 1500）による計算であり、
   実際のレンズ固有の収差特性までは再現しない
-- 3D Preview、実写Preview、AI自動配置、Cloud、Login、リアルタイム共同編集、
+- 3D Preview、実写Preview、AI自動配置、Cloud同期、ログイン機能、リアルタイム共同編集、
   動画書き出し、本格的なCAD/BIM機能は対象外
