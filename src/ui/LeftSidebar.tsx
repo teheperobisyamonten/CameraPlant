@@ -2,6 +2,7 @@ import { useCameraStore } from '../state/cameraStore'
 import { useMapStore } from '../state/mapStore'
 import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
+import { useSubjectStore } from '../state/subjectStore'
 
 /** Spread newly placed cameras out a little so they don't stack exactly on top of each other. */
 const PLACEMENT_STAGGER_PX = 24
@@ -15,6 +16,8 @@ export function LeftSidebar() {
 
   const cameras = useCameraStore((s) => s.cameras)
   const addCamera = useCameraStore((s) => s.addCamera)
+  const subjects = useSubjectStore((s) => s.subjects)
+  const addSubject = useSubjectStore((s) => s.addSubject)
   const select = useSelectionStore((s) => s.select)
 
   const handleAddCamera = () => {
@@ -22,6 +25,13 @@ export function LeftSidebar() {
     const stagger = (cameras.length % PLACEMENT_STAGGER_COUNT) * PLACEMENT_STAGGER_PX
     const id = addCamera({ x: image.width / 2 + stagger, y: image.height / 2 + stagger })
     select({ kind: 'camera', id })
+  }
+
+  const handleAddSubject = () => {
+    if (!image) return
+    const stagger = (subjects.length % PLACEMENT_STAGGER_COUNT) * PLACEMENT_STAGGER_PX
+    const id = addSubject({ x: image.width / 2 - stagger, y: image.height / 2 + stagger })
+    select({ kind: 'subject', id })
   }
 
   return (
@@ -72,7 +82,12 @@ export function LeftSidebar() {
           >
             Camera
           </button>
-          <button className="sidebar__item" type="button" disabled>
+          <button
+            className="sidebar__item"
+            type="button"
+            disabled={!image}
+            onClick={handleAddSubject}
+          >
             Subject
           </button>
         </div>

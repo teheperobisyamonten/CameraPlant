@@ -7,11 +7,13 @@ import { useCameraStore } from '../../state/cameraStore'
 import { useMapStore } from '../../state/mapStore'
 import { useScaleStore } from '../../state/scaleStore'
 import { useSelectionStore } from '../../state/selectionStore'
+import { useSubjectStore } from '../../state/subjectStore'
 import { MAX_SCALE, MIN_SCALE, useViewportStore } from '../../state/viewportStore'
 import { CameraNode } from './CameraNode'
 import { FloorMapLayer } from './FloorMapLayer'
 import { ScaleCalibrationLayer } from './ScaleCalibrationLayer'
 import { ScaleCalibrationPanel } from './ScaleCalibrationPanel'
+import { SubjectNode } from './SubjectNode'
 
 const ZOOM_STEP = 1.05
 const FIT_PADDING = 40
@@ -49,6 +51,10 @@ export function CanvasStage() {
   const cameras = useCameraStore((s) => s.cameras)
   const updateCamera = useCameraStore((s) => s.updateCamera)
   const removeCamera = useCameraStore((s) => s.removeCamera)
+
+  const subjects = useSubjectStore((s) => s.subjects)
+  const updateSubject = useSubjectStore((s) => s.updateSubject)
+  const removeSubject = useSubjectStore((s) => s.removeSubject)
 
   const fovRangePx = pixelsPerMeter
     ? metersToPixels(FOV_PREVIEW_METERS, pixelsPerMeter)
@@ -98,10 +104,10 @@ export function CanvasStage() {
   useEffect(() => {
     const transformer = transformerRef.current
     if (!transformer) return
-    const node = selected?.kind === 'camera' ? shapeRefs.current.get(selected.id) : undefined
+    const node = selected ? shapeRefs.current.get(selected.id) : undefined
     transformer.nodes(node ? [node] : [])
     transformer.getLayer()?.batchDraw()
-  }, [selected, cameras])
+  }, [selected, cameras, subjects])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -115,8 +121,10 @@ export function CanvasStage() {
         e.preventDefault()
         if (selected.kind === 'camera') {
           removeCamera(selected.id)
-          select(null)
+        } else {
+          removeSubject(selected.id)
         }
+        select(null)
       }
     }
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -128,7 +136,7 @@ export function CanvasStage() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [isCalibrating, cancelCalibration, selected, removeCamera, select])
+  }, [isCalibrating, cancelCalibration, selected, removeCamera, removeSubject, select])
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault()
@@ -265,6 +273,19 @@ export function CanvasStage() {
                 }}
               />
             ))}
+            {subjects.map((subject) => (
+              <SubjectNode
+                key={subject.id}
+                subject={subject}
+                isSelected={selected?.kind === 'subject' && selected.id === subject.id}
+                onSelect={() => select({ kind: 'subject', id: subject.id })}
+                onDragMove={(nx, ny) => updateSubject(subject.id, { x: nx, y: ny })}
+                onRegister={(node) => {
+                  if (node) shapeRefs.current.set(subject.id, node)
+                  else shapeRefs.current.delete(subject.id)
+                }}
+              />
+            ))}
             <Transformer
               ref={transformerRef}
               rotateEnabled
@@ -274,14 +295,20 @@ export function CanvasStage() {
               anchorFill="#1e1e1e"
               onTransform={() => {
                 const node = transformerRef.current?.nodes()[0]
-                if (node && selected?.kind === 'camera') {
+                if (!node || !selected) return
+                if (selected.kind === 'camera') {
                   updateCamera(selected.id, { rotationDeg: node.rotation() })
+                } else {
+                  updateSubject(selected.id, { rotationDeg: node.rotation() })
                 }
               }}
               onTransformEnd={() => {
                 const node = transformerRef.current?.nodes()[0]
-                if (node && selected?.kind === 'camera') {
+                if (!node || !selected) return
+                if (selected.kind === 'camera') {
                   updateCamera(selected.id, { rotationDeg: node.rotation() })
+                } else {
+                  updateSubject(selected.id, { rotationDeg: node.rotation() })
                 }
               }}
             />

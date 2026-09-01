@@ -4,8 +4,10 @@ import LENSES from '../data/lenses.json'
 import { resolveCameraFov } from '../data/resolveFov'
 import { useCameraStore } from '../state/cameraStore'
 import { useSelectionStore } from '../state/selectionStore'
+import { useSubjectStore } from '../state/subjectStore'
 import type { CameraDefinition } from '../types/cameraDefinition'
 import type { LensDefinition } from '../types/lensDefinition'
+import type { SubjectType } from '../types/subject'
 
 const CAMERA_DEFINITIONS = CAMERAS as CameraDefinition[]
 const LENS_DEFINITIONS = LENSES as LensDefinition[]
@@ -157,14 +159,73 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
   )
 }
 
+function SubjectProperties({ subjectId }: { subjectId: string }) {
+  const subject = useSubjectStore((s) => s.subjects.find((sub) => sub.id === subjectId))
+  const updateSubject = useSubjectStore((s) => s.updateSubject)
+
+  if (!subject) return null
+
+  return (
+    <>
+      <p className="properties__title">Subject</p>
+
+      <div className="properties__row">
+        <label htmlFor="subject-name">Name</label>
+        <input
+          id="subject-name"
+          type="text"
+          value={subject.name}
+          onChange={(e) => updateSubject(subject.id, { name: e.target.value })}
+        />
+      </div>
+
+      <div className="properties__row">
+        <label htmlFor="subject-type">Type</label>
+        <select
+          id="subject-type"
+          value={subject.type}
+          onChange={(e) => updateSubject(subject.id, { type: e.target.value as SubjectType })}
+        >
+          <option value="person">Person</option>
+          <option value="object">Object</option>
+        </select>
+      </div>
+
+      <div className="properties__row">
+        <label>Position X</label>
+        <span>{Math.round(subject.x)} px</span>
+      </div>
+
+      <div className="properties__row">
+        <label>Position Y</label>
+        <span>{Math.round(subject.y)} px</span>
+      </div>
+
+      <div className="properties__row">
+        <label htmlFor="subject-rotation">Rotation</label>
+        <input
+          id="subject-rotation"
+          type="number"
+          step="1"
+          value={Math.round(subject.rotationDeg)}
+          onChange={(e) => {
+            const value = Number(e.target.value)
+            if (Number.isFinite(value)) updateSubject(subject.id, { rotationDeg: value })
+          }}
+        />
+      </div>
+    </>
+  )
+}
+
 export function PropertiesPanel() {
   const selected = useSelectionStore((s) => s.selected)
 
   return (
     <div className="panel properties">
-      {selected?.kind === 'camera' ? (
-        <CameraProperties cameraId={selected.id} />
-      ) : (
+      {selected?.kind === 'camera' && <CameraProperties cameraId={selected.id} />}
+      {selected?.kind === 'subject' && <SubjectProperties subjectId={selected.id} />}
+      {!selected && (
         <>
           <p className="properties__title">Properties</p>
           <p className="properties__empty">No object selected.</p>
