@@ -1,10 +1,11 @@
 import { useRef, type ChangeEvent } from 'react'
+import { useCameraDatabaseUiStore } from '../state/cameraDatabaseUiStore'
 import { useExportUiStore } from '../state/exportUiStore'
 import { useHistoryStore } from '../state/historyStore'
 import { useMapStore } from '../state/mapStore'
 import { useViewportStore } from '../state/viewportStore'
 
-const MENU_ITEMS = ['Project', 'Map', 'View', 'Export', 'Settings'] as const
+const MENU_ITEMS = ['Project', 'Map', 'View', 'Export', 'Camera DB', 'Settings'] as const
 type MenuItem = (typeof MENU_ITEMS)[number]
 
 export function TopBar() {
@@ -16,6 +17,7 @@ export function TopBar() {
   const undo = useHistoryStore((s) => s.undo)
   const redo = useHistoryStore((s) => s.redo)
   const openExport = useExportUiStore((s) => s.open)
+  const openCameraDatabase = useCameraDatabaseUiStore((s) => s.open)
 
   const handleMenuClick = (item: MenuItem) => {
     if (item === 'Map') {
@@ -24,6 +26,8 @@ export function TopBar() {
       requestReset()
     } else if (item === 'Export') {
       openExport()
+    } else if (item === 'Camera DB') {
+      openCameraDatabase()
     }
   }
 
@@ -35,7 +39,7 @@ export function TopBar() {
 
   return (
     <div className="topbar">
-      <span className="topbar__brand">Camera Plan</span>
+      <span className="topbar__brand">Camera Plant</span>
       <nav className="topbar__menu">
         {MENU_ITEMS.map((item) => (
           <button

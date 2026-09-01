@@ -1,6 +1,7 @@
 import { clampFocalLength, getCompatibleLenses } from '../data/compatibility'
-import CAMERAS from '../data/cameras.json'
+import { useCameraDefinitions } from '../data/cameraCatalog'
 import LENSES from '../data/lenses.json'
+import { resolveCameraDepthOfField } from '../data/resolveDepthOfField'
 import { resolveCameraFov } from '../data/resolveFov'
 import { distanceMeters } from '../geometry/distance'
 import { useCameraStore } from '../state/cameraStore'
@@ -9,12 +10,12 @@ import { useHistoryStore } from '../state/historyStore'
 import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { useSubjectStore } from '../state/subjectStore'
-import type { CameraDefinition } from '../types/cameraDefinition'
 import type { LensDefinition } from '../types/lensDefinition'
 import type { SubjectType } from '../types/subject'
 
-const CAMERA_DEFINITIONS = CAMERAS as CameraDefinition[]
 const LENS_DEFINITIONS = LENSES as LensDefinition[]
+const DEFAULT_FOCUS_DISTANCE_M = 3
+const MAX_APERTURE_FSTOP = 22
 
 function DistanceList({
   from,
@@ -47,18 +48,20 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
   const camera = useCameraStore((s) => s.cameras.find((c) => c.id === cameraId))
   const updateCamera = useCameraStore((s) => s.updateCamera)
   const subjects = useSubjectStore((s) => s.subjects)
+  const cameraDefinitions = useCameraDefinitions()
 
   if (!camera) return null
 
-  const cameraDefinition = CAMERA_DEFINITIONS.find((c) => c.id === camera.cameraDefinitionId)
+  const cameraDefinition = cameraDefinitions.find((c) => c.id === camera.cameraDefinitionId)
   const lensDefinition = LENS_DEFINITIONS.find((l) => l.id === camera.lensDefinitionId)
   const fov = resolveCameraFov(camera)
+  const dof = resolveCameraDepthOfField(camera)
   const compatibleLenses = cameraDefinition
     ? getCompatibleLenses(cameraDefinition, LENS_DEFINITIONS)
     : []
 
   const handleCameraChange = (id: string) => {
-    const next = CAMERA_DEFINITIONS.find((c) => c.id === id) ?? null
+    const next = cameraDefinitions.find((c) => c.id === id) ?? null
     // Changing the camera model can invalidate the current lens (different mount),
     // so the lens selection is cleared and must be re-chosen from the compatible list.
     useHistoryStore.getState().commit()
@@ -75,12 +78,25 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
     updateCamera(camera.id, {
       lensDefinitionId: next?.id ?? null,
       focalLengthMm: next ? clampFocalLength(next, next.type === 'prime' ? next.focalLengthMm : next.focalMinMm) : null,
+      apertureFStop: next?.maxAperture ?? null,
+      focusDistanceM: next ? (camera.focusDistanceM ?? DEFAULT_FOCUS_DISTANCE_M) : null,
     })
   }
 
   const handleFocalLengthChange = (value: number) => {
     if (!lensDefinition || !Number.isFinite(value)) return
     updateCamera(camera.id, { focalLengthMm: clampFocalLength(lensDefinition, value) })
+  }
+
+  const handleApertureChange = (value: number) => {
+    if (!lensDefinition || !Number.isFinite(value)) return
+    const clamped = Math.max(lensDefinition.maxAperture, Math.min(MAX_APERTURE_FSTOP, value))
+    updateCamera(camera.id, { apertureFStop: clamped })
+  }
+
+  const handleFocusDistanceChange = (value: number) => {
+    if (!Number.isFinite(value) || value <= 0) return
+    updateCamera(camera.id, { focusDistanceM: value })
   }
 
   return (
@@ -106,7 +122,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
           onChange={(e) => handleCameraChange(e.target.value)}
         >
           <option value="">Select camera…</option>
-          {CAMERA_DEFINITIONS.map((def) => (
+          {cameraDefinitions.map((def) => (
             <option key={def.id} value={def.id}>
               {def.manufacturer} {def.model}
             </option>
@@ -194,6 +210,49 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
         <span>{fov ? `${fov.verticalDeg.toFixed(1)}°` : 'Not set'}</span>
       </div>
 
+      <div className="properties__row">
+        <label htmlFor="camera-aperture">Aperture (f/)</label>
+        <input
+          id="camera-aperture"
+          type="number"
+          step="0.1"
+          min={lensDefinition?.maxAperture ?? 0}
+          max={MAX_APERTURE_FSTOP}
+          disabled={!lensDefinition}
+          value={camera.apertureFStop ?? ''}
+          onFocus={() => useHistoryStore.getState().commit()}
+          onChange={(e) => handleApertureChange(Number(e.target.value))}
+        />
+      </div>
+
+      <div className="properties__row">
+        <label htmlFor="camera-focus-distance">Focus Distance (m)</label>
+        <input
+          id="camera-focus-distance"
+          type="number"
+          step="0.1"
+          min={0.1}
+          disabled={!lensDefinition}
+          value={camera.focusDistanceM ?? ''}
+          onFocus={() => useHistoryStore.getState().commit()}
+          onChange={(e) => handleFocusDistanceChange(Number(e.target.value))}
+        />
+      </div>
+
+      <div className="properties__row">
+        <label>Near / Far Focus</label>
+        <span>
+          {dof
+            ? `${dof.nearM.toFixed(2)}m – ${dof.farM !== null ? `${dof.farM.toFixed(2)}m` : '∞'}`
+            : 'Not set'}
+        </span>
+      </div>
+
+      <div className="properties__row">
+        <label>Hyperfocal</label>
+        <span>{dof ? `${dof.hyperfocalM.toFixed(2)} m` : 'Not set'}</span>
+      </div>
+
       <DistanceList from={camera} targets={subjects} />
     </>
   )
@@ -260,6 +319,27 @@ function SubjectProperties({ subjectId }: { subjectId: string }) {
           }}
         />
       </div>
+
+      {subject.type === 'person' && (
+        <div className="properties__row">
+          <label htmlFor="subject-personal-space">Personal Space</label>
+          <input
+            id="subject-personal-space"
+            type="number"
+            min={0}
+            max={5}
+            step={0.1}
+            value={subject.personalSpaceRadiusM ?? 0}
+            onFocus={() => useHistoryStore.getState().commit()}
+            onChange={(e) => {
+              const value = Number(e.target.value)
+              if (Number.isFinite(value)) {
+                updateSubject(subject.id, { personalSpaceRadiusM: Math.max(0, Math.min(5, value)) })
+              }
+            }}
+          />
+        </div>
+      )}
 
       <DistanceList from={subject} targets={cameras} />
     </>

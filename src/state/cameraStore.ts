@@ -27,6 +27,8 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       cameraDefinitionId: null,
       lensDefinitionId: null,
       focalLengthMm: null,
+      apertureFStop: null,
+      focusDistanceM: null,
     }
     set((s) => ({ cameras: [...s.cameras, camera], nextNameIndex: s.nextNameIndex + 1 }))
     return id

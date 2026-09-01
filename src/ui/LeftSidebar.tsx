@@ -1,5 +1,6 @@
 import { useCameraStore } from '../state/cameraStore'
 import { useHistoryStore } from '../state/historyStore'
+import { LayersPanel } from './LayersPanel'
 import { useMapStore } from '../state/mapStore'
 import { useProjectStore } from '../state/projectStore'
 import { useScaleStore } from '../state/scaleStore'
@@ -40,6 +41,7 @@ export function LeftSidebar() {
   const activeSequenceIndex = useSequenceStore((s) => s.activeIndex)
   const switchSequence = useSequenceStore((s) => s.switchTo)
   const duplicateSequence = useSequenceStore((s) => s.duplicateCurrentToNext)
+  const clearSequence = useSequenceStore((s) => s.clearCurrent)
 
   const activeTool = useToolStore((s) => s.activeTool)
   const setActiveTool = useToolStore((s) => s.setActiveTool)
@@ -97,14 +99,19 @@ export function LeftSidebar() {
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className="sidebar__item sequence__duplicate"
-          disabled={activeSequenceIndex >= SEQUENCE_COUNT - 1}
-          onClick={duplicateSequence}
-        >
-          Duplicate Sequence
-        </button>
+        <div className="sequence__actions">
+          <button
+            type="button"
+            className="sidebar__item sequence__duplicate"
+            disabled={activeSequenceIndex >= SEQUENCE_COUNT - 1}
+            onClick={duplicateSequence}
+          >
+            Duplicate
+          </button>
+          <button type="button" className="sidebar__item sequence__clear" onClick={clearSequence}>
+            Clear
+          </button>
+        </div>
       </div>
 
       <div className="sidebar__section">
@@ -147,6 +154,8 @@ export function LeftSidebar() {
           </button>
         </div>
       </div>
+
+      <LayersPanel />
 
       <div className="sidebar__section">
         <p className="sidebar__section-title">Tools</p>

@@ -1,14 +1,21 @@
 import { useEffect, useRef } from 'react'
-import { Circle, Group, Rect, Text, Wedge } from 'react-konva'
+import { Arc, Circle, Group, Rect, Text, Wedge } from 'react-konva'
 import type Konva from 'konva'
 import type { FovResult } from '../../geometry/fov'
 import type { CameraInstance } from '../../types/camera'
+
+/** Depth-of-field near/far band to render, already converted to canvas px. */
+export interface DofBandPx {
+  nearPx: number
+  farPx: number
+}
 
 interface CameraNodeProps {
   camera: CameraInstance
   isSelected: boolean
   fov: FovResult | null
   fovRangePx: number
+  dofBandPx: DofBandPx | null
   onSelect: () => void
   onDragStart: () => void
   onDragMove: (x: number, y: number) => void
@@ -20,6 +27,7 @@ export function CameraNode({
   isSelected,
   fov,
   fovRangePx,
+  dofBandPx,
   onSelect,
   onDragStart,
   onDragMove,
@@ -44,6 +52,20 @@ export function CameraNode({
           rotation={camera.rotationDeg - fov.horizontalDeg / 2}
           fill="rgba(79, 195, 247, 0.18)"
           stroke="rgba(79, 195, 247, 0.55)"
+          strokeWidth={1}
+          listening={false}
+        />
+      )}
+      {fov && dofBandPx && (
+        <Arc
+          x={camera.x}
+          y={camera.y}
+          innerRadius={dofBandPx.nearPx}
+          outerRadius={dofBandPx.farPx}
+          angle={fov.horizontalDeg}
+          rotation={camera.rotationDeg - fov.horizontalDeg / 2}
+          fill="rgba(120, 220, 140, 0.28)"
+          stroke="rgba(120, 220, 140, 0.6)"
           strokeWidth={1}
           listening={false}
         />

@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type { SceneSnapshot } from '../state/snapshot'
+import type { CameraDefinition } from '../types/cameraDefinition'
 
 /** v0.1 has a single working project, always stored under CURRENT_PROJECT_ID. */
 export interface ProjectRecord {
@@ -18,11 +19,17 @@ export const CURRENT_PROJECT_ID = 'current'
 
 class CameraPlanDB extends Dexie {
   projects!: Table<ProjectRecord, string>
+  /** User-added camera models, layered on top of the built-in src/data/cameras.json catalog. */
+  customCameras!: Table<CameraDefinition, string>
 
   constructor() {
     super('CameraPlanDB')
     this.version(1).stores({
       projects: 'id',
+    })
+    this.version(2).stores({
+      projects: 'id',
+      customCameras: 'id',
     })
   }
 }

@@ -13,4 +13,8 @@ export interface CameraInstance {
   cameraDefinitionId: string | null
   lensDefinitionId: string | null
   focalLengthMm: number | null
+  /** f-number the shot is taken at; null until a lens is selected. Clamped to >= the lens's maxAperture. */
+  apertureFStop: number | null
+  /** Distance from camera to the focus plane, in meters; null until a lens is selected. */
+  focusDistanceM: number | null
 }

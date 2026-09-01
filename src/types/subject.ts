@@ -8,4 +8,6 @@ export interface SubjectInstance {
   x: number
   y: number
   rotationDeg: number
+  /** Personal-space radius in meters, drawn as a circle around a 'person'. Null/0 hides it. Not meaningful for 'object'. */
+  personalSpaceRadiusM: number | null
 }

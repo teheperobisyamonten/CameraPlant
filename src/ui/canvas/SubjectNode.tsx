@@ -6,6 +6,8 @@ import type { SubjectInstance } from '../../types/subject'
 interface SubjectNodeProps {
   subject: SubjectInstance
   isSelected: boolean
+  /** Personal-space circle radius in canvas px, or null to hide it (non-person, or radius 0). */
+  personalSpaceRadiusPx: number | null
   onSelect: () => void
   onDragStart: () => void
   onDragMove: (x: number, y: number) => void
@@ -15,6 +17,7 @@ interface SubjectNodeProps {
 export function SubjectNode({
   subject,
   isSelected,
+  personalSpaceRadiusPx,
   onSelect,
   onDragStart,
   onDragMove,
@@ -33,6 +36,18 @@ export function SubjectNode({
 
   return (
     <>
+      {subject.type === 'person' && personalSpaceRadiusPx && personalSpaceRadiusPx > 0 && (
+        <Circle
+          x={subject.x}
+          y={subject.y}
+          radius={personalSpaceRadiusPx}
+          fill="rgba(224, 164, 88, 0.14)"
+          stroke="rgba(224, 164, 88, 0.5)"
+          strokeWidth={1}
+          dash={[4, 4]}
+          listening={false}
+        />
+      )}
       <Group
         ref={groupRef}
         x={subject.x}

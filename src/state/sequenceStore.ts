@@ -16,6 +16,8 @@ interface SequenceState {
   switchTo: (index: number) => void
   /** Deep-copies the current sequence into the next slot and switches to it. */
   duplicateCurrentToNext: () => void
+  /** Empties the current sequence's cameras/subjects/drawings (undoable). */
+  clearCurrent: () => void
 }
 
 export const useSequenceStore = create<SequenceState>((set, get) => ({
@@ -54,6 +56,12 @@ export const useSequenceStore = create<SequenceState>((set, get) => ({
     set({ sequences: updated, activeIndex: nextIndex })
     applySceneSnapshot(duplicated)
     useHistoryStore.getState().reset()
+    useSelectionStore.getState().select(null)
+  },
+
+  clearCurrent: () => {
+    useHistoryStore.getState().commit()
+    applySceneSnapshot(emptySnapshot())
     useSelectionStore.getState().select(null)
   },
 }))

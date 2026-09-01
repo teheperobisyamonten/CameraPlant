@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Stage, Layer, Transformer } from 'react-konva'
 import type Konva from 'konva'
+import { resolveCameraDepthOfField } from '../../data/resolveDepthOfField'
 import { resolveCameraFov } from '../../data/resolveFov'
 import { hitTestDrawing } from '../../geometry/drawing'
 import { metersToPixels } from '../../geometry/scale'
@@ -13,10 +14,11 @@ import { useSelectionStore } from '../../state/selectionStore'
 import { useSubjectStore } from '../../state/subjectStore'
 import { useToolStore } from '../../state/toolStore'
 import { MAX_SCALE, MIN_SCALE, useViewportStore } from '../../state/viewportStore'
+import type { CameraInstance } from '../../types/camera'
 import type { DrawingObject } from '../../types/drawing'
 import { buildDrawingFromDrag } from './buildDrawing'
 import { canvasRefs } from './canvasRefs'
-import { CameraNode } from './CameraNode'
+import { CameraNode, type DofBandPx } from './CameraNode'
 import { DrawingLayer } from './DrawingLayer'
 import { FloorMapLayer } from './FloorMapLayer'
 import { ScaleCalibrationLayer } from './ScaleCalibrationLayer'
@@ -31,6 +33,8 @@ const CLICK_MOVE_THRESHOLD = 5
 /** How far the FOV wedge is drawn: a real-world preview distance once Scale is set, else a fixed fallback. */
 const FOV_PREVIEW_METERS = 5
 const FOV_PREVIEW_FALLBACK_PX = 220
+/** Used to render personal-space radii in px before Scale Calibration is done. */
+const FALLBACK_PX_PER_METER = 40
 const ERASE_TOLERANCE_PX = 8
 const DEFAULT_TEXT_FONT_SIZE = 16
 
@@ -79,6 +83,20 @@ export function CanvasStage() {
   const fovRangePx = pixelsPerMeter
     ? metersToPixels(FOV_PREVIEW_METERS, pixelsPerMeter)
     : FOV_PREVIEW_FALLBACK_PX
+
+  // DoF is only meaningful once Scale Calibration ties px to real-world meters;
+  // without it we'd be drawing near/far distances at an arbitrary, misleading scale.
+  const resolveDofBandPx = (camera: CameraInstance): DofBandPx | null => {
+    if (!pixelsPerMeter) return null
+    const dof = resolveCameraDepthOfField(camera)
+    if (!dof) return null
+    const nearPx = Math.min(metersToPixels(dof.nearM, pixelsPerMeter), fovRangePx)
+    const farPx = Math.min(
+      dof.farM !== null ? metersToPixels(dof.farM, pixelsPerMeter) : fovRangePx,
+      fovRangePx,
+    )
+    return { nearPx, farPx }
+  }
 
   const selected = useSelectionStore((s) => s.selected)
   const select = useSelectionStore((s) => s.select)
@@ -470,6 +488,7 @@ export function CanvasStage() {
                 isSelected={selected?.kind === 'camera' && selected.id === camera.id}
                 fov={resolveCameraFov(camera)}
                 fovRangePx={fovRangePx}
+                dofBandPx={resolveDofBandPx(camera)}
                 onSelect={() => select({ kind: 'camera', id: camera.id })}
                 onDragStart={() => useHistoryStore.getState().commit()}
                 onDragMove={(nx, ny) => updateCamera(camera.id, { x: nx, y: ny })}
@@ -484,6 +503,13 @@ export function CanvasStage() {
                 key={subject.id}
                 subject={subject}
                 isSelected={selected?.kind === 'subject' && selected.id === subject.id}
+                personalSpaceRadiusPx={
+                  subject.personalSpaceRadiusM
+                    ? pixelsPerMeter
+                      ? metersToPixels(subject.personalSpaceRadiusM, pixelsPerMeter)
+                      : subject.personalSpaceRadiusM * FALLBACK_PX_PER_METER
+                    : null
+                }
                 onSelect={() => select({ kind: 'subject', id: subject.id })}
                 onDragStart={() => useHistoryStore.getState().commit()}
                 onDragMove={(nx, ny) => updateSubject(subject.id, { x: nx, y: ny })}
