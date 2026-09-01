@@ -80,6 +80,29 @@
   width: 100%;
 }
 
+.sequence__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.sequence__item {
+  padding: 6px 0;
+  text-align: center;
+}
+
+.sequence__item[aria-pressed='true'] {
+  background: var(--cp-accent);
+  color: #0d1b22;
+  border-color: var(--cp-accent);
+  font-weight: 600;
+}
+
+.sequence__duplicate {
+  font-size: 12px;
+}
+
 .properties {
   border-left: 1px solid var(--cp-border);
   padding: 12px;

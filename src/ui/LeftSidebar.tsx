@@ -3,6 +3,7 @@ import { useHistoryStore } from '../state/historyStore'
 import { useMapStore } from '../state/mapStore'
 import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
+import { SEQUENCE_COUNT, useSequenceStore } from '../state/sequenceStore'
 import { useSubjectStore } from '../state/subjectStore'
 
 /** Spread newly placed cameras out a little so they don't stack exactly on top of each other. */
@@ -20,6 +21,10 @@ export function LeftSidebar() {
   const subjects = useSubjectStore((s) => s.subjects)
   const addSubject = useSubjectStore((s) => s.addSubject)
   const select = useSelectionStore((s) => s.select)
+
+  const activeSequenceIndex = useSequenceStore((s) => s.activeIndex)
+  const switchSequence = useSequenceStore((s) => s.switchTo)
+  const duplicateSequence = useSequenceStore((s) => s.duplicateCurrentToNext)
 
   const handleAddCamera = () => {
     if (!image) return
@@ -50,9 +55,27 @@ export function LeftSidebar() {
 
       <div className="sidebar__section">
         <p className="sidebar__section-title">Sequence</p>
-        <div className="sidebar__list">
-          <span className="properties__empty">1 2 3 4 5 6 7 8 9 10</span>
+        <div className="sequence__grid">
+          {Array.from({ length: SEQUENCE_COUNT }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              className="sequence__item"
+              aria-pressed={i === activeSequenceIndex}
+              onClick={() => switchSequence(i)}
+            >
+              {i + 1}
+            </button>
+          ))}
         </div>
+        <button
+          type="button"
+          className="sidebar__item sequence__duplicate"
+          disabled={activeSequenceIndex >= SEQUENCE_COUNT - 1}
+          onClick={duplicateSequence}
+        >
+          Duplicate Sequence
+        </button>
       </div>
 
       <div className="sidebar__section">

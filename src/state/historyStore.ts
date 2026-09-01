@@ -1,35 +1,17 @@
 import { create } from 'zustand'
-import { useCameraStore } from './cameraStore'
-import { useSubjectStore } from './subjectStore'
-import type { CameraInstance } from '../types/camera'
-import type { SubjectInstance } from '../types/subject'
+import { applySceneSnapshot, captureSceneSnapshot, type SceneSnapshot } from './snapshot'
 
 const MAX_HISTORY = 100
 
-interface Snapshot {
-  cameras: CameraInstance[]
-  subjects: SubjectInstance[]
-}
-
-function captureSnapshot(): Snapshot {
-  return {
-    cameras: useCameraStore.getState().cameras,
-    subjects: useSubjectStore.getState().subjects,
-  }
-}
-
-function applySnapshot(snapshot: Snapshot) {
-  useCameraStore.setState({ cameras: snapshot.cameras })
-  useSubjectStore.setState({ subjects: snapshot.subjects })
-}
-
 interface HistoryState {
-  past: Snapshot[]
-  future: Snapshot[]
+  past: SceneSnapshot[]
+  future: SceneSnapshot[]
   /** Call BEFORE a mutation (add/move/rotate/delete/property change) to record one undoable step. */
   commit: () => void
   undo: () => void
   redo: () => void
+  /** Clears history — used when switching Sequences, since past/future belong to the sequence being left. */
+  reset: () => void
 }
 
 /**
@@ -44,7 +26,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   future: [],
 
   commit: () => {
-    const snapshot = captureSnapshot()
+    const snapshot = captureSceneSnapshot()
     set((s) => ({
       past: [...s.past, snapshot].slice(-MAX_HISTORY),
       future: [],
@@ -55,23 +37,25 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const { past } = get()
     if (past.length === 0) return
     const previous = past[past.length - 1]
-    const currentSnapshot = captureSnapshot()
+    const currentSnapshot = captureSceneSnapshot()
     set((s) => ({
       past: s.past.slice(0, -1),
       future: [currentSnapshot, ...s.future],
     }))
-    applySnapshot(previous)
+    applySceneSnapshot(previous)
   },
 
   redo: () => {
     const { future } = get()
     if (future.length === 0) return
     const next = future[0]
-    const currentSnapshot = captureSnapshot()
+    const currentSnapshot = captureSceneSnapshot()
     set((s) => ({
       past: [...s.past, currentSnapshot],
       future: s.future.slice(1),
     }))
-    applySnapshot(next)
+    applySceneSnapshot(next)
   },
+
+  reset: () => set({ past: [], future: [] }),
 }))
