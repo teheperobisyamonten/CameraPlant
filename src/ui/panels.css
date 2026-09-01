@@ -132,3 +132,20 @@
   font-size: 13px;
   text-align: center;
 }
+
+.canvas-area__error {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--cp-bg-panel-alt);
+  border: 1px solid var(--cp-danger);
+  color: var(--cp-danger);
+  border-radius: 4px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  z-index: 10;
+}
