@@ -2,7 +2,9 @@ import { clampFocalLength, getCompatibleLenses } from '../data/compatibility'
 import CAMERAS from '../data/cameras.json'
 import LENSES from '../data/lenses.json'
 import { resolveCameraFov } from '../data/resolveFov'
+import { distanceMeters } from '../geometry/distance'
 import { useCameraStore } from '../state/cameraStore'
+import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { useSubjectStore } from '../state/subjectStore'
 import type { CameraDefinition } from '../types/cameraDefinition'
@@ -12,9 +14,37 @@ import type { SubjectType } from '../types/subject'
 const CAMERA_DEFINITIONS = CAMERAS as CameraDefinition[]
 const LENS_DEFINITIONS = LENSES as LensDefinition[]
 
+function DistanceList({
+  from,
+  targets,
+}: {
+  from: { x: number; y: number }
+  targets: { id: string; name: string; x: number; y: number }[]
+}) {
+  const pixelsPerMeter = useScaleStore((s) => s.pixelsPerMeter)
+
+  if (targets.length === 0) return null
+
+  return (
+    <>
+      <p className="properties__title">Distance</p>
+      {targets.map((target) => {
+        const meters = distanceMeters(from, target, pixelsPerMeter)
+        return (
+          <div className="properties__row" key={target.id}>
+            <label>{target.name}</label>
+            <span>{meters !== null ? `${meters.toFixed(2)} m` : 'Scale not configured'}</span>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
 function CameraProperties({ cameraId }: { cameraId: string }) {
   const camera = useCameraStore((s) => s.cameras.find((c) => c.id === cameraId))
   const updateCamera = useCameraStore((s) => s.updateCamera)
+  const subjects = useSubjectStore((s) => s.subjects)
 
   if (!camera) return null
 
@@ -155,6 +185,8 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
         <label>VFOV</label>
         <span>{fov ? `${fov.verticalDeg.toFixed(1)}°` : 'Not set'}</span>
       </div>
+
+      <DistanceList from={camera} targets={subjects} />
     </>
   )
 }
@@ -162,6 +194,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
 function SubjectProperties({ subjectId }: { subjectId: string }) {
   const subject = useSubjectStore((s) => s.subjects.find((sub) => sub.id === subjectId))
   const updateSubject = useSubjectStore((s) => s.updateSubject)
+  const cameras = useCameraStore((s) => s.cameras)
 
   if (!subject) return null
 
@@ -214,6 +247,8 @@ function SubjectProperties({ subjectId }: { subjectId: string }) {
           }}
         />
       </div>
+
+      <DistanceList from={subject} targets={cameras} />
     </>
   )
 }
