@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Stage, Layer } from 'react-konva'
+import { Stage, Layer, Transformer } from 'react-konva'
 import type Konva from 'konva'
+import { useCameraStore } from '../../state/cameraStore'
 import { useMapStore } from '../../state/mapStore'
 import { useScaleStore } from '../../state/scaleStore'
+import { useSelectionStore } from '../../state/selectionStore'
 import { MAX_SCALE, MIN_SCALE, useViewportStore } from '../../state/viewportStore'
+import { CameraNode } from './CameraNode'
 import { FloorMapLayer } from './FloorMapLayer'
 import { ScaleCalibrationLayer } from './ScaleCalibrationLayer'
 import { ScaleCalibrationPanel } from './ScaleCalibrationPanel'
@@ -12,6 +15,12 @@ const ZOOM_STEP = 1.05
 const FIT_PADDING = 40
 /** Pointer movement (px) below which a mousedown/mouseup pair counts as a click, not a drag. */
 const CLICK_MOVE_THRESHOLD = 5
+
+function isEditableElement(el: Element | null): boolean {
+  if (!el) return false
+  const tag = el.tagName
+  return tag === 'INPUT' || tag === 'TEXTAREA' || (el as HTMLElement).isContentEditable
+}
 
 export function CanvasStage() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -31,10 +40,20 @@ export function CanvasStage() {
   const addCalibrationPoint = useScaleStore((s) => s.addPoint)
   const cancelCalibration = useScaleStore((s) => s.cancelCalibration)
 
+  const cameras = useCameraStore((s) => s.cameras)
+  const updateCamera = useCameraStore((s) => s.updateCamera)
+  const removeCamera = useCameraStore((s) => s.removeCamera)
+
+  const selected = useSelectionStore((s) => s.selected)
+  const select = useSelectionStore((s) => s.select)
+
   const isSpaceDown = useRef(false)
   const isPanning = useRef(false)
   const lastPointer = useRef({ x: 0, y: 0 })
   const clickStart = useRef<{ x: number; y: number } | null>(null)
+
+  const shapeRefs = useRef(new Map<string, Konva.Group>())
+  const transformerRef = useRef<Konva.Transformer>(null)
 
   useEffect(() => {
     const el = containerRef.current
@@ -67,9 +86,28 @@ export function CanvasStage() {
   }, [fitToView, resetToken])
 
   useEffect(() => {
+    const transformer = transformerRef.current
+    if (!transformer) return
+    const node = selected?.kind === 'camera' ? shapeRefs.current.get(selected.id) : undefined
+    transformer.nodes(node ? [node] : [])
+    transformer.getLayer()?.batchDraw()
+  }, [selected, cameras])
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') isSpaceDown.current = true
       if (e.code === 'Escape' && isCalibrating) cancelCalibration()
+
+      const isDeleteKey =
+        e.code === 'Delete' || e.code === 'Backspace' || e.key === 'Delete' || e.key === 'Backspace'
+      if (isDeleteKey && selected) {
+        if (isEditableElement(document.activeElement)) return
+        e.preventDefault()
+        if (selected.kind === 'camera') {
+          removeCamera(selected.id)
+          select(null)
+        }
+      }
     }
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') isSpaceDown.current = false
@@ -80,7 +118,7 @@ export function CanvasStage() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [isCalibrating, cancelCalibration])
+  }, [isCalibrating, cancelCalibration, selected, removeCamera, select])
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault()
@@ -150,6 +188,12 @@ export function CanvasStage() {
 
     if (isCalibrating) {
       addCalibrationPoint(imagePoint)
+      return
+    }
+
+    // Clicked empty canvas background (not a shape) -> deselect.
+    if (e.target === stage) {
+      select(null)
     }
   }
 
@@ -196,6 +240,39 @@ export function CanvasStage() {
           <Layer>
             <FloorMapLayer image={image} />
             <ScaleCalibrationLayer />
+            {cameras.map((camera) => (
+              <CameraNode
+                key={camera.id}
+                camera={camera}
+                isSelected={selected?.kind === 'camera' && selected.id === camera.id}
+                onSelect={() => select({ kind: 'camera', id: camera.id })}
+                onDragMove={(nx, ny) => updateCamera(camera.id, { x: nx, y: ny })}
+                onRegister={(node) => {
+                  if (node) shapeRefs.current.set(camera.id, node)
+                  else shapeRefs.current.delete(camera.id)
+                }}
+              />
+            ))}
+            <Transformer
+              ref={transformerRef}
+              rotateEnabled
+              resizeEnabled={false}
+              borderStroke="#4fc3f7"
+              anchorStroke="#4fc3f7"
+              anchorFill="#1e1e1e"
+              onTransform={() => {
+                const node = transformerRef.current?.nodes()[0]
+                if (node && selected?.kind === 'camera') {
+                  updateCamera(selected.id, { rotationDeg: node.rotation() })
+                }
+              }}
+              onTransformEnd={() => {
+                const node = transformerRef.current?.nodes()[0]
+                if (node && selected?.kind === 'camera') {
+                  updateCamera(selected.id, { rotationDeg: node.rotation() })
+                }
+              }}
+            />
           </Layer>
         </Stage>
       )}

@@ -1,11 +1,28 @@
+import { useCameraStore } from '../state/cameraStore'
 import { useMapStore } from '../state/mapStore'
 import { useScaleStore } from '../state/scaleStore'
+import { useSelectionStore } from '../state/selectionStore'
+
+/** Spread newly placed cameras out a little so they don't stack exactly on top of each other. */
+const PLACEMENT_STAGGER_PX = 24
+const PLACEMENT_STAGGER_COUNT = 6
 
 export function LeftSidebar() {
   const image = useMapStore((s) => s.image)
   const pixelsPerMeter = useScaleStore((s) => s.pixelsPerMeter)
   const isCalibrating = useScaleStore((s) => s.isCalibrating)
   const startCalibration = useScaleStore((s) => s.startCalibration)
+
+  const cameras = useCameraStore((s) => s.cameras)
+  const addCamera = useCameraStore((s) => s.addCamera)
+  const select = useSelectionStore((s) => s.select)
+
+  const handleAddCamera = () => {
+    if (!image) return
+    const stagger = (cameras.length % PLACEMENT_STAGGER_COUNT) * PLACEMENT_STAGGER_PX
+    const id = addCamera({ x: image.width / 2 + stagger, y: image.height / 2 + stagger })
+    select({ kind: 'camera', id })
+  }
 
   return (
     <div className="panel sidebar">
@@ -47,10 +64,15 @@ export function LeftSidebar() {
       <div className="sidebar__section">
         <p className="sidebar__section-title">Objects</p>
         <div className="sidebar__list">
-          <button className="sidebar__item" type="button">
+          <button
+            className="sidebar__item"
+            type="button"
+            disabled={!image}
+            onClick={handleAddCamera}
+          >
             Camera
           </button>
-          <button className="sidebar__item" type="button">
+          <button className="sidebar__item" type="button" disabled>
             Subject
           </button>
         </div>
