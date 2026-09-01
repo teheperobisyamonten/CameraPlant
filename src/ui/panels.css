@@ -360,6 +360,12 @@
   border-bottom: 1px solid var(--cp-border);
 }
 
+.equipment-db__divider {
+  border: none;
+  border-top: 1px solid var(--cp-border);
+  margin: 12px 0;
+}
+
 .canvas-area__hint {
   position: absolute;
   bottom: 20px;

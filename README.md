@@ -60,9 +60,11 @@ src/
 - Scale Calibration（2点指定 + 実距離入力による px/m 換算、異常値バリデーション）
 - Camera Object の配置・選択・移動・回転・削除、実機 Camera / Lens データベースからの選択
   （Mount 互換性によるレンズ絞り込み、Zoomレンズの焦点距離スライダー）
-- Camera Database（Camera DBメニュー）: 実機データベースに加えて、ユーザーが独自の
-  Camera（Manufacturer / Model / Mount / Sensor Size）を追加・削除できる。追加したカメラは
-  IndexedDBに永続化され、通常のCamera選択欄にもそのまま表示される
+- Equipment Database（Equipment DBメニュー）: 実機データベースに加えて、ユーザーが独自の
+  Camera（Manufacturer / Model / Mount / Sensor Size）とLens（Manufacturer / Name / Mount /
+  Zoom or Prime / Focal Range or Focal Length / Max Aperture / Sensor Coverage）を追加・削除
+  できる。追加した機材はIndexedDBに永続化され、通常のCamera/Lens選択欄にもそのまま表示・
+  Mount互換性フィルタの対象になる
 - FOV（水平/垂直画角）の自動計算と Canvas 上への表示（回転・レンズ・焦点距離の変更に追従）
 - 被写界深度（Depth of Field）: Aperture（F値）と Focus Distance を設定すると、Near/Far/
   Hyperfocalを自動計算。Scale設定済みの場合はFOV扇形内に合焦範囲を緑色のArcで表示

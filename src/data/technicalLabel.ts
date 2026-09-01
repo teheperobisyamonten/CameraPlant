@@ -1,12 +1,9 @@
 import { getCameraDefinitionsSnapshot } from './cameraCatalog'
-import LENSES from './lenses.json'
+import { getLensDefinitionsSnapshot } from './lensCatalog'
 import { resolveCameraFov } from './resolveFov'
 import { distanceMeters } from '../geometry/distance'
 import type { CameraInstance } from '../types/camera'
-import type { LensDefinition } from '../types/lensDefinition'
 import type { SubjectInstance } from '../types/subject'
-
-const LENS_DEFINITIONS = LENSES as LensDefinition[]
 
 /** Camera Name/Model/Lens/Focal Length/HFOV/Distance lines for the Technical export overlay (spec Section 38). */
 export function buildCameraTechnicalLines(
@@ -17,7 +14,7 @@ export function buildCameraTechnicalLines(
   const cameraDefinition = getCameraDefinitionsSnapshot().find(
     (c) => c.id === camera.cameraDefinitionId,
   )
-  const lensDefinition = LENS_DEFINITIONS.find((l) => l.id === camera.lensDefinitionId)
+  const lensDefinition = getLensDefinitionsSnapshot().find((l) => l.id === camera.lensDefinitionId)
   const fov = resolveCameraFov(camera)
 
   const lines = [

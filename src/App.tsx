@@ -3,6 +3,7 @@ import './App.css'
 import './ui/panels.css'
 import { initAutosave } from './persistence/autosave'
 import { loadCustomCameras } from './persistence/customCameraPersistence'
+import { loadCustomLenses } from './persistence/customLensPersistence'
 import { loadProject } from './persistence/projectPersistence'
 import { TopBar } from './ui/TopBar'
 import { LeftSidebar } from './ui/LeftSidebar'
@@ -10,7 +11,7 @@ import { PropertiesPanel } from './ui/PropertiesPanel'
 import { StatusBar } from './ui/StatusBar'
 import { CanvasStage } from './ui/canvas/CanvasStage'
 import { ExportPanel } from './ui/ExportPanel'
-import { CameraDatabasePanel } from './ui/CameraDatabasePanel'
+import { EquipmentDatabasePanel } from './ui/EquipmentDatabasePanel'
 
 function App() {
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -23,6 +24,9 @@ function App() {
     })
     loadCustomCameras().catch((err) => {
       console.error('Failed to load custom cameras:', err)
+    })
+    loadCustomLenses().catch((err) => {
+      console.error('Failed to load custom lenses:', err)
     })
   }, [])
 
@@ -45,7 +49,7 @@ function App() {
         <StatusBar />
       </div>
       <ExportPanel />
-      <CameraDatabasePanel />
+      <EquipmentDatabasePanel />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { clampFocalLength, getCompatibleLenses } from '../data/compatibility'
 import { useCameraDefinitions } from '../data/cameraCatalog'
-import LENSES from '../data/lenses.json'
+import { useLensDefinitions } from '../data/lensCatalog'
 import { resolveCameraDepthOfField } from '../data/resolveDepthOfField'
 import { resolveCameraFov } from '../data/resolveFov'
 import { distanceMeters } from '../geometry/distance'
@@ -10,10 +10,8 @@ import { useHistoryStore } from '../state/historyStore'
 import { useScaleStore } from '../state/scaleStore'
 import { useSelectionStore } from '../state/selectionStore'
 import { useSubjectStore } from '../state/subjectStore'
-import type { LensDefinition } from '../types/lensDefinition'
 import type { SubjectType } from '../types/subject'
 
-const LENS_DEFINITIONS = LENSES as LensDefinition[]
 const DEFAULT_FOCUS_DISTANCE_M = 3
 const MAX_APERTURE_FSTOP = 22
 
@@ -49,15 +47,16 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
   const updateCamera = useCameraStore((s) => s.updateCamera)
   const subjects = useSubjectStore((s) => s.subjects)
   const cameraDefinitions = useCameraDefinitions()
+  const lensDefinitions = useLensDefinitions()
 
   if (!camera) return null
 
   const cameraDefinition = cameraDefinitions.find((c) => c.id === camera.cameraDefinitionId)
-  const lensDefinition = LENS_DEFINITIONS.find((l) => l.id === camera.lensDefinitionId)
+  const lensDefinition = lensDefinitions.find((l) => l.id === camera.lensDefinitionId)
   const fov = resolveCameraFov(camera)
   const dof = resolveCameraDepthOfField(camera)
   const compatibleLenses = cameraDefinition
-    ? getCompatibleLenses(cameraDefinition, LENS_DEFINITIONS)
+    ? getCompatibleLenses(cameraDefinition, lensDefinitions)
     : []
 
   const handleCameraChange = (id: string) => {
@@ -73,7 +72,7 @@ function CameraProperties({ cameraId }: { cameraId: string }) {
   }
 
   const handleLensChange = (id: string) => {
-    const next = LENS_DEFINITIONS.find((l) => l.id === id) ?? null
+    const next = lensDefinitions.find((l) => l.id === id) ?? null
     useHistoryStore.getState().commit()
     updateCamera(camera.id, {
       lensDefinitionId: next?.id ?? null,
