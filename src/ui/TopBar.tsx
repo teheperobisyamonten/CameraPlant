@@ -1,4 +1,5 @@
 import { useRef, type ChangeEvent } from 'react'
+import { useExportUiStore } from '../state/exportUiStore'
 import { useHistoryStore } from '../state/historyStore'
 import { useMapStore } from '../state/mapStore'
 import { useViewportStore } from '../state/viewportStore'
@@ -14,12 +15,15 @@ export function TopBar() {
   const canRedo = useHistoryStore((s) => s.future.length > 0)
   const undo = useHistoryStore((s) => s.undo)
   const redo = useHistoryStore((s) => s.redo)
+  const openExport = useExportUiStore((s) => s.open)
 
   const handleMenuClick = (item: MenuItem) => {
     if (item === 'Map') {
       fileInputRef.current?.click()
     } else if (item === 'View') {
       requestReset()
+    } else if (item === 'Export') {
+      openExport()
     }
   }
 

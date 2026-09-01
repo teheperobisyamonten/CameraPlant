@@ -8,6 +8,7 @@ import { LeftSidebar } from './ui/LeftSidebar'
 import { PropertiesPanel } from './ui/PropertiesPanel'
 import { StatusBar } from './ui/StatusBar'
 import { CanvasStage } from './ui/canvas/CanvasStage'
+import { ExportPanel } from './ui/ExportPanel'
 
 function App() {
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -38,6 +39,7 @@ function App() {
       <div className="app-shell__statusbar">
         <StatusBar />
       </div>
+      <ExportPanel />
     </div>
   )
 }

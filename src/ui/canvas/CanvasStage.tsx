@@ -15,6 +15,7 @@ import { useToolStore } from '../../state/toolStore'
 import { MAX_SCALE, MIN_SCALE, useViewportStore } from '../../state/viewportStore'
 import type { DrawingObject } from '../../types/drawing'
 import { buildDrawingFromDrag } from './buildDrawing'
+import { canvasRefs } from './canvasRefs'
 import { CameraNode } from './CameraNode'
 import { DrawingLayer } from './DrawingLayer'
 import { FloorMapLayer } from './FloorMapLayer'
@@ -95,7 +96,7 @@ export function CanvasStage() {
   const [textPromptPoint, setTextPromptPoint] = useState<{ x: number; y: number } | null>(null)
 
   const shapeRefs = useRef(new Map<string, Konva.Group>())
-  const transformerRef = useRef<Konva.Transformer>(null)
+  const transformerRef = useRef<Konva.Transformer | null>(null)
 
   useEffect(() => {
     const el = containerRef.current
@@ -435,6 +436,9 @@ export function CanvasStage() {
 
       {image && size.width > 0 && size.height > 0 && (
         <Stage
+          ref={(node) => {
+            canvasRefs.stage = node
+          }}
           width={size.width}
           height={size.height}
           scaleX={scale}
@@ -490,7 +494,10 @@ export function CanvasStage() {
               />
             ))}
             <Transformer
-              ref={transformerRef}
+              ref={(node) => {
+                transformerRef.current = node
+                canvasRefs.transformer = node
+              }}
               rotateEnabled
               resizeEnabled={false}
               borderStroke="#4fc3f7"
