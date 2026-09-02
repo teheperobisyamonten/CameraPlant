@@ -24,6 +24,28 @@ const TOOL_ITEMS: { mode: ToolMode; label: string }[] = [
 const PLACEMENT_STAGGER_PX = 24
 const PLACEMENT_STAGGER_COUNT = 6
 
+/** MIME type used for the HTML5 drag payload identifying which object kind is being dropped. */
+export const DRAG_OBJECT_KIND_MIME = 'application/x-camera-plant-object'
+
+function CameraIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="7" width="14" height="12" rx="2" fill="#2d2d30" stroke="#8a8a8a" />
+      <rect x="15" y="10" width="6" height="4" rx="1" fill="#4fc3f7" />
+      <circle cx="8" cy="13" r="3" fill="#4fc3f7" />
+    </svg>
+  )
+}
+
+function PersonIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="7" r="4" fill="#e0a458" stroke="#8a8a8a" />
+      <rect x="7" y="12" width="10" height="9" rx="3" fill="#e0a458" stroke="#8a8a8a" />
+    </svg>
+  )
+}
+
 export function LeftSidebar() {
   const projectName = useProjectStore((s) => s.name)
   const setProjectName = useProjectStore((s) => s.setName)
@@ -151,22 +173,36 @@ export function LeftSidebar() {
 
       <div className="sidebar__section">
         <p className="sidebar__section-title">Objects</p>
-        <div className="sidebar__list">
+        <div className="sidebar__icon-list">
           <button
-            className="sidebar__item"
+            className="sidebar__icon-btn"
             type="button"
             disabled={!image}
+            draggable={!!image}
+            onDragStart={(e) => {
+              e.dataTransfer.setData(DRAG_OBJECT_KIND_MIME, 'camera')
+              e.dataTransfer.effectAllowed = 'copy'
+            }}
             onClick={handleAddCamera}
+            title="Drag onto the map to place, or click to add"
           >
-            Camera
+            <CameraIcon />
+            <span>Camera</span>
           </button>
           <button
-            className="sidebar__item"
+            className="sidebar__icon-btn"
             type="button"
             disabled={!image}
+            draggable={!!image}
+            onDragStart={(e) => {
+              e.dataTransfer.setData(DRAG_OBJECT_KIND_MIME, 'subject')
+              e.dataTransfer.effectAllowed = 'copy'
+            }}
             onClick={handleAddSubject}
+            title="Drag onto the map to place, or click to add"
           >
-            Subject
+            <PersonIcon />
+            <span>Subject</span>
           </button>
         </div>
       </div>

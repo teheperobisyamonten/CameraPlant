@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react'
 import { Stage, Layer, Transformer } from 'react-konva'
 import type Konva from 'konva'
 import { resolveCameraDepthOfField } from '../../data/resolveDepthOfField'
@@ -26,6 +26,7 @@ import { ScaleCalibrationLayer } from './ScaleCalibrationLayer'
 import { ScaleCalibrationPanel } from './ScaleCalibrationPanel'
 import { SubjectNode } from './SubjectNode'
 import { TextToolPanel } from './TextToolPanel'
+import { DRAG_OBJECT_KIND_MIME } from '../LeftSidebar'
 
 const ZOOM_STEP = 1.05
 const FIT_PADDING = 40
@@ -70,10 +71,12 @@ export function CanvasStage() {
   const pixelsPerMeter = useScaleStore((s) => s.pixelsPerMeter)
 
   const cameras = useCameraStore((s) => s.cameras)
+  const addCamera = useCameraStore((s) => s.addCamera)
   const updateCamera = useCameraStore((s) => s.updateCamera)
   const removeCamera = useCameraStore((s) => s.removeCamera)
 
   const subjects = useSubjectStore((s) => s.subjects)
+  const addSubject = useSubjectStore((s) => s.addSubject)
   const updateSubject = useSubjectStore((s) => s.updateSubject)
   const removeSubject = useSubjectStore((s) => s.removeSubject)
 
@@ -436,6 +439,35 @@ export function CanvasStage() {
     clickStart.current = null
   }
 
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    if (!image || !e.dataTransfer.types.includes(DRAG_OBJECT_KIND_MIME)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    if (!image) return
+    const kind = e.dataTransfer.getData(DRAG_OBJECT_KIND_MIME)
+    if (kind !== 'camera' && kind !== 'subject') return
+    e.preventDefault()
+
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const point = {
+      x: (e.clientX - rect.left - x) / scale,
+      y: (e.clientY - rect.top - y) / scale,
+    }
+
+    useHistoryStore.getState().commit()
+    if (kind === 'camera') {
+      const id = addCamera(point)
+      select({ kind: 'camera', id })
+    } else {
+      const id = addSubject(point)
+      select({ kind: 'subject', id })
+    }
+  }
+
   const persistMeasurement = () => {
     if (!measurePendingPoints) return
     useHistoryStore.getState().commit()
@@ -471,7 +503,12 @@ export function CanvasStage() {
   }
 
   return (
-    <div className="canvas-area" ref={containerRef}>
+    <div
+      className="canvas-area"
+      ref={containerRef}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       {error && (
         <div className="canvas-area__error">
           <span>{error}</span>

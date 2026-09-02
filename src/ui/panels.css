@@ -84,6 +84,31 @@
   width: 100%;
 }
 
+.sidebar__icon-list {
+  display: flex;
+  gap: 8px;
+}
+
+.sidebar__icon-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  font-size: 11px;
+  cursor: grab;
+}
+
+.sidebar__icon-btn:active {
+  cursor: grabbing;
+}
+
+.sidebar__icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .sequence__grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
