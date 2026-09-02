@@ -36,6 +36,11 @@ const FOV_PREVIEW_METERS = 5
 const FOV_PREVIEW_FALLBACK_PX = 220
 /** Used to render personal-space radii in px before Scale Calibration is done. */
 const FALLBACK_PX_PER_METER = 40
+/** Representative real-world footprint sizes, used to scale icons once Scale is calibrated. */
+const CAMERA_SIZE_M = 0.2
+const SUBJECT_SIZE_M = 0.45
+/** Icon size (px) that CAMERA_SIZE_M / SUBJECT_SIZE_M correspond to at sizeScale 1. */
+const BASE_ICON_PX = 20
 const ERASE_TOLERANCE_PX = 8
 const DEFAULT_TEXT_FONT_SIZE = 16
 
@@ -84,6 +89,13 @@ export function CanvasStage() {
   const fovRangePx = pixelsPerMeter
     ? metersToPixels(FOV_PREVIEW_METERS, pixelsPerMeter)
     : FOV_PREVIEW_FALLBACK_PX
+
+  const cameraSizeScale = pixelsPerMeter
+    ? metersToPixels(CAMERA_SIZE_M, pixelsPerMeter) / BASE_ICON_PX
+    : 1
+  const subjectSizeScale = pixelsPerMeter
+    ? metersToPixels(SUBJECT_SIZE_M, pixelsPerMeter) / BASE_ICON_PX
+    : 1
 
   // DoF is only meaningful once Scale Calibration ties px to real-world meters;
   // without it we'd be drawing near/far distances at an arbitrary, misleading scale.
@@ -547,6 +559,7 @@ export function CanvasStage() {
                 fov={resolveCameraFov(camera)}
                 fovRangePx={fovRangePx}
                 dofBandPx={resolveDofBandPx(camera)}
+                sizeScale={cameraSizeScale}
                 onSelect={() => select({ kind: 'camera', id: camera.id })}
                 onDragStart={() => useHistoryStore.getState().commit()}
                 onDragMove={(nx, ny) => updateCamera(camera.id, { x: nx, y: ny })}
@@ -568,6 +581,7 @@ export function CanvasStage() {
                       : subject.personalSpaceRadiusM * FALLBACK_PX_PER_METER
                     : null
                 }
+                sizeScale={subjectSizeScale}
                 onSelect={() => select({ kind: 'subject', id: subject.id })}
                 onDragStart={() => useHistoryStore.getState().commit()}
                 onDragMove={(nx, ny) => updateSubject(subject.id, { x: nx, y: ny })}

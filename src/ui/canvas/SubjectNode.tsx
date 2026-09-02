@@ -8,6 +8,8 @@ interface SubjectNodeProps {
   isSelected: boolean
   /** Personal-space circle radius in canvas px, or null to hide it (non-person, or radius 0). */
   personalSpaceRadiusPx: number | null
+  /** Icon scale factor so the drawn subject size reflects real-world size once Scale is calibrated. */
+  sizeScale: number
   onSelect: () => void
   onDragStart: () => void
   onDragMove: (x: number, y: number) => void
@@ -18,6 +20,7 @@ export function SubjectNode({
   subject,
   isSelected,
   personalSpaceRadiusPx,
+  sizeScale,
   onSelect,
   onDragStart,
   onDragMove,
@@ -53,6 +56,8 @@ export function SubjectNode({
         x={subject.x}
         y={subject.y}
         rotation={subject.rotationDeg}
+        scaleX={sizeScale}
+        scaleY={sizeScale}
         draggable
         onClick={onSelect}
         onTap={onSelect}

@@ -17,6 +17,8 @@ interface ScaleState {
    * succeeded; on failure, `error` is set for the caller to display.
    */
   calibrateFromMeasurement: (pointA: Point, pointB: Point, meters: number) => boolean
+  /** Directly sets pixelsPerMeter (e.g. typed into the Scale field). Returns whether it succeeded. */
+  setPixelsPerMeter: (value: number) => boolean
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -71,6 +73,15 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
       return false
     }
     set({ pixelsPerMeter: result.pixelsPerMeter, error: null })
+    return true
+  },
+
+  setPixelsPerMeter: (value) => {
+    if (!Number.isFinite(value) || value <= 0) {
+      set({ error: ERROR_MESSAGES.INVALID_DISTANCE })
+      return false
+    }
+    set({ pixelsPerMeter: value, error: null })
     return true
   },
 }))

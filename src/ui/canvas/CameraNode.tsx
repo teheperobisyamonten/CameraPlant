@@ -16,6 +16,8 @@ interface CameraNodeProps {
   fov: FovResult | null
   fovRangePx: number
   dofBandPx: DofBandPx | null
+  /** Icon scale factor so the drawn camera size reflects real-world size once Scale is calibrated. */
+  sizeScale: number
   onSelect: () => void
   onDragStart: () => void
   onDragMove: (x: number, y: number) => void
@@ -28,6 +30,7 @@ export function CameraNode({
   fov,
   fovRangePx,
   dofBandPx,
+  sizeScale,
   onSelect,
   onDragStart,
   onDragMove,
@@ -75,6 +78,8 @@ export function CameraNode({
         x={camera.x}
         y={camera.y}
         rotation={camera.rotationDeg}
+        scaleX={sizeScale}
+        scaleY={sizeScale}
         draggable
         onClick={onSelect}
         onTap={onSelect}

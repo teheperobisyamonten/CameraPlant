@@ -31,6 +31,8 @@ export function LeftSidebar() {
   const pixelsPerMeter = useScaleStore((s) => s.pixelsPerMeter)
   const isCalibrating = useScaleStore((s) => s.isCalibrating)
   const startCalibration = useScaleStore((s) => s.startCalibration)
+  const setPixelsPerMeter = useScaleStore((s) => s.setPixelsPerMeter)
+  const scaleError = useScaleStore((s) => s.error)
 
   const cameras = useCameraStore((s) => s.cameras)
   const addCamera = useCameraStore((s) => s.addCamera)
@@ -125,11 +127,25 @@ export function LeftSidebar() {
           >
             {pixelsPerMeter ? 'Recalibrate Scale' : 'Set Scale'}
           </button>
-          <span className="properties__empty">
-            {pixelsPerMeter
-              ? `1 m = ${Math.round(pixelsPerMeter)} px`
-              : 'Scale not configured'}
-          </span>
+          <div className="scale__manual-row">
+            <span>1 m =</span>
+            <input
+              type="number"
+              min={0}
+              step="0.1"
+              placeholder="e.g. 161"
+              value={pixelsPerMeter ? Math.round(pixelsPerMeter * 100) / 100 : ''}
+              onChange={(e) => {
+                const value = Number(e.target.value)
+                if (e.target.value !== '' && Number.isFinite(value)) setPixelsPerMeter(value)
+              }}
+            />
+            <span>px</span>
+          </div>
+          {scaleError && <span className="canvas-area__hint-error">{scaleError}</span>}
+          {!pixelsPerMeter && !scaleError && (
+            <span className="properties__empty">Scale not configured</span>
+          )}
         </div>
       </div>
 
