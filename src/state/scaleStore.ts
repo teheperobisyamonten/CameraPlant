@@ -11,6 +11,12 @@ interface ScaleState {
   addPoint: (point: Point) => void
   confirmRealDistance: (meters: number) => void
   cancelCalibration: () => void
+  /**
+   * Recalibrates pixelsPerMeter from an arbitrary pair of points (e.g. a Measure
+   * tool line) instead of the pointA/pointB 2-click flow. Returns whether it
+   * succeeded; on failure, `error` is set for the caller to display.
+   */
+  calibrateFromMeasurement: (pointA: Point, pointB: Point, meters: number) => boolean
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -57,4 +63,14 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   },
 
   cancelCalibration: () => set({ isCalibrating: false, pointA: null, pointB: null, error: null }),
+
+  calibrateFromMeasurement: (pointA, pointB, meters) => {
+    const result = calibrateScale(pointA, pointB, meters)
+    if (!result.ok) {
+      set({ error: ERROR_MESSAGES[result.error] })
+      return false
+    }
+    set({ pixelsPerMeter: result.pixelsPerMeter, error: null })
+    return true
+  },
 }))

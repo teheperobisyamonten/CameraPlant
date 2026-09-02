@@ -21,6 +21,7 @@ import { canvasRefs } from './canvasRefs'
 import { CameraNode, type DofBandPx } from './CameraNode'
 import { DrawingLayer } from './DrawingLayer'
 import { FloorMapLayer } from './FloorMapLayer'
+import { MeasureToolPanel } from './MeasureToolPanel'
 import { ScaleCalibrationLayer } from './ScaleCalibrationLayer'
 import { ScaleCalibrationPanel } from './ScaleCalibrationPanel'
 import { SubjectNode } from './SubjectNode'
@@ -112,6 +113,10 @@ export function CanvasStage() {
   const penPoints = useRef<number[]>([])
   const [previewDrawing, setPreviewDrawing] = useState<DrawingObject | null>(null)
   const [textPromptPoint, setTextPromptPoint] = useState<{ x: number; y: number } | null>(null)
+  const [measurePendingPoints, setMeasurePendingPoints] = useState<{
+    start: { x: number; y: number }
+    end: { x: number; y: number }
+  } | null>(null)
 
   const shapeRefs = useRef(new Map<string, Konva.Group>())
   const transformerRef = useRef<Konva.Transformer | null>(null)
@@ -160,6 +165,7 @@ export function CanvasStage() {
       if (e.code === 'Escape') {
         if (isCalibrating) cancelCalibration()
         if (textPromptPoint) setTextPromptPoint(null)
+        if (measurePendingPoints) setMeasurePendingPoints(null)
         setActiveTool('select')
       }
 
@@ -212,6 +218,7 @@ export function CanvasStage() {
     removeDrawing,
     select,
     textPromptPoint,
+    measurePendingPoints,
     setActiveTool,
   ])
 
@@ -360,16 +367,21 @@ export function CanvasStage() {
         penPoints.current = []
       } else if (drawStart.current) {
         const point = getImagePoint(e)
-        if (point) {
-          finalDrawing = buildDrawingFromDrag(
-            activeTool,
-            drawStart.current,
-            point,
-            toolColor,
-            toolStrokeWidth,
-          )
-        }
+        const start = drawStart.current
         drawStart.current = null
+
+        if (point && activeTool === 'measure') {
+          // Defer to MeasureToolPanel instead of committing immediately: the
+          // user may want to type the real distance here and recalibrate
+          // Scale for the whole project from this one line.
+          setPreviewDrawing(null)
+          setMeasurePendingPoints({ start, end: point })
+          return
+        }
+
+        if (point) {
+          finalDrawing = buildDrawingFromDrag(activeTool, start, point, toolColor, toolStrokeWidth)
+        }
       }
 
       setPreviewDrawing(null)
@@ -412,6 +424,24 @@ export function CanvasStage() {
     clickStart.current = null
   }
 
+  const persistMeasurement = () => {
+    if (!measurePendingPoints) return
+    useHistoryStore.getState().commit()
+    addDrawing({
+      id: crypto.randomUUID(),
+      type: 'measure',
+      points: [
+        measurePendingPoints.start.x,
+        measurePendingPoints.start.y,
+        measurePendingPoints.end.x,
+        measurePendingPoints.end.y,
+      ],
+      color: toolColor,
+      strokeWidth: toolStrokeWidth,
+    })
+    setMeasurePendingPoints(null)
+  }
+
   const handleTextConfirm = (text: string) => {
     if (!textPromptPoint) return
     useHistoryStore.getState().commit()
@@ -451,6 +481,15 @@ export function CanvasStage() {
       {textPromptPoint && (
         <TextToolPanel onConfirm={handleTextConfirm} onCancel={() => setTextPromptPoint(null)} />
       )}
+      {measurePendingPoints && (
+        <MeasureToolPanel
+          start={measurePendingPoints.start}
+          end={measurePendingPoints.end}
+          onSetScale={persistMeasurement}
+          onSaveOnly={persistMeasurement}
+          onCancel={() => setMeasurePendingPoints(null)}
+        />
+      )}
 
       {image && size.width > 0 && size.height > 0 && (
         <Stage
@@ -480,6 +519,25 @@ export function CanvasStage() {
             />
             {previewDrawing && (
               <DrawingLayer drawings={[previewDrawing]} interactive={false} />
+            )}
+            {measurePendingPoints && (
+              <DrawingLayer
+                drawings={[
+                  {
+                    id: 'measure-pending-preview',
+                    type: 'measure',
+                    points: [
+                      measurePendingPoints.start.x,
+                      measurePendingPoints.start.y,
+                      measurePendingPoints.end.x,
+                      measurePendingPoints.end.y,
+                    ],
+                    color: toolColor,
+                    strokeWidth: toolStrokeWidth,
+                  },
+                ]}
+                interactive={false}
+              />
             )}
             {cameras.map((camera) => (
               <CameraNode
